@@ -1,0 +1,290 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AssetBundleConfig xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/-NVRManager-.prefab" Crc="4146732809" ABName="-nvrmanager-" AssetName="-NVRManager-.prefab" />
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/camera.prefab" Crc="1686721568" ABName="camera" AssetName="camera.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/cameraauth.prefab" Crc="1101901224" ABName="cameraauth" AssetName="cameraauth.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/cameraauthGroup.prefab" Crc="3369218726" ABName="cameraauthgroup" AssetName="cameraauthGroup.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/CameraFiletog.prefab" Crc="928405807" ABName="camerafiletog" AssetName="CameraFiletog.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/cameraGroup.prefab" Crc="1704832515" ABName="cameragroup" AssetName="cameraGroup.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/cameragroupset.prefab" Crc="490658945" ABName="cameragroupset" AssetName="cameragroupset.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/cameraitem.prefab" Crc="1517145825" ABName="cameraitem" AssetName="cameraitem.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>mandmanagentpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/camerapartrol.prefab" Crc="1547835985" ABName="camerapartrol" AssetName="camerapartrol.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/videorender/cameraplayer.prefab" Crc="2175597411" ABName="cameraplayer" AssetName="cameraplayer.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>shader</ABDependce>
+    <ABDependce>mainpreviewbg</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/videorender/cameraplayerMask.prefab" Crc="1788268702" ABName="cameraplayermask" AssetName="cameraplayerMask.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/cameratog.prefab" Crc="3737084098" ABName="cameratog" AssetName="cameratog.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/DoorAreaFiletog.prefab" Crc="593719553" ABName="doorareafiletog" AssetName="DoorAreaFiletog.prefab">
+    <ABDependce>camerafiletog</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/DoorEquipManager.prefab" Crc="1562466453" ABName="doorequipmanager" AssetName="DoorEquipManager.prefab">
+    <ABDependce>camerafiletog</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/doorequipName.prefab" Crc="3816080102" ABName="doorequipname" AssetName="doorequipName.prefab">
+    <ABDependce>doorequipmanager</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/DoorFiletog.prefab" Crc="481907385" ABName="doorfiletog" AssetName="DoorFiletog.prefab">
+    <ABDependce>camerafiletog</ABDependce>
+    <ABDependce>doorequipmanager</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/dooritem.prefab" Crc="858948185" ABName="dooritem" AssetName="dooritem.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>mandmanagentpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/dooritemshort.prefab" Crc="365748893" ABName="dooritemshort" AssetName="dooritemshort.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+    <ABDependce>mandmanagentpage</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/RealEventPrefab.prefab" Crc="129556859" ABName="evencentertpage" AssetName="RealEventPrefab.prefab" />
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/EvenCentertPage.prefab" Crc="3767148041" ABName="evencentertpage" AssetName="EvenCentertPage.prefab">
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/facemesg.prefab" Crc="3313713110" ABName="facemesg" AssetName="facemesg.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/FirstPage.prefab" Crc="1103970149" ABName="firstpage" AssetName="FirstPage.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/Fonts/20000.txt" Crc="1826926299" ABName="fonts" AssetName="20000.txt" />
+  <ABList Path="Assets/Fonts/ch_cn.txt" Crc="4291372130" ABName="fonts" AssetName="ch_cn.txt" />
+  <ABList Path="Assets/Fonts/Chinese.txt" Crc="3688678616" ABName="fonts" AssetName="Chinese.txt" />
+  <ABList Path="Assets/Fonts/ff.txt" Crc="2540152768" ABName="fonts" AssetName="ff.txt" />
+  <ABList Path="Assets/Fonts/msyh.ttc" Crc="1862817024" ABName="fonts" AssetName="msyh.ttc" />
+  <ABList Path="Assets/Fonts/msyhbd.ttc" Crc="1620267834" ABName="fonts" AssetName="msyhbd.ttc" />
+  <ABList Path="Assets/Fonts/msyhl.ttc" Crc="2245441347" ABName="fonts" AssetName="msyhl.ttc" />
+  <ABList Path="Assets/Fonts/new.txt" Crc="2684237666" ABName="fonts" AssetName="new.txt" />
+  <ABList Path="Assets/Fonts/TMPFont/msyh SDF.asset" Crc="931389234" ABName="fonts" AssetName="msyh SDF.asset">
+    <ABDependce>evencentertpage</ABDependce>
+  </ABList>
+  <ABList Path="Assets/Fonts/方正楷体简体.ttf" Crc="1413056582" ABName="fonts" AssetName="方正楷体简体.ttf" />
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/importdooritem.prefab" Crc="187971959" ABName="importdooritem" AssetName="importdooritem.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>mandmanagentpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/ItemPrefab1.prefab" Crc="3394045267" ABName="itemprefab1" AssetName="ItemPrefab1.prefab">
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/Login.prefab" Crc="4147959021" ABName="login" AssetName="Login.prefab" />
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/Newvsion.prefab" Crc="660346009" ABName="mainpreviewbg" AssetName="Newvsion.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/mainpreviewbg.prefab" Crc="3000191082" ABName="mainpreviewbg" AssetName="mainpreviewbg.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>shader</ABDependce>
+    <ABDependce>fonts</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>firstpage</ABDependce>
+  </ABList>
+  <ABList Path="Assets/Resources/UI/videopreviews/0-位置.jpg" Crc="1504382123" ABName="mainpreviewui" AssetName="0-位置.jpg" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/0-位置.jpg" Crc="123899799" ABName="mainpreviewui" AssetName="0-位置.jpg" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/上-0-1.png" Crc="3389485941" ABName="mainpreviewui" AssetName="上-0-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/上-1-1.png" Crc="1819310273" ABName="mainpreviewui" AssetName="上-1-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/下-0-1.png" Crc="3715917622" ABName="mainpreviewui" AssetName="下-0-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/下-1-1.png" Crc="2064346242" ABName="mainpreviewui" AssetName="下-1-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/云台控制.png" Crc="4082144299" ABName="mainpreviewui" AssetName="云台控制.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/右-0.png" Crc="3693200524" ABName="mainpreviewui" AssetName="右-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/右-1.png" Crc="3779194172" ABName="mainpreviewui" AssetName="右-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/左-0.png" Crc="3220127533" ABName="mainpreviewui" AssetName="左-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/左-1.png" Crc="2190415517" ABName="mainpreviewui" AssetName="左-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/底.png" Crc="3309621955" ABName="mainpreviewui" AssetName="底.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/按钮底.png" Crc="3240380866" ABName="mainpreviewui" AssetName="按钮底.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/放大-0.png" Crc="3809161277" ABName="mainpreviewui" AssetName="放大-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/放大-1.png" Crc="3731560845" ABName="mainpreviewui" AssetName="放大-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/更新-0.png" Crc="1003331255" ABName="mainpreviewui" AssetName="更新-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/更新-1.png" Crc="112047879" ABName="mainpreviewui" AssetName="更新-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/缩小-0.png" Crc="2233516155" ABName="mainpreviewui" AssetName="缩小-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/cloundcontrol/缩小-1.png" Crc="3091261899" ABName="mainpreviewui" AssetName="缩小-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/上-0.png" Crc="580151263" ABName="mainpreviewui" AssetName="上-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/上-1.png" Crc="536104559" ABName="mainpreviewui" AssetName="上-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/下-0.png" Crc="2229496939" ABName="mainpreviewui" AssetName="下-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/下-1.png" Crc="3112388059" ABName="mainpreviewui" AssetName="下-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/云台控制.png" Crc="1010132511" ABName="mainpreviewui" AssetName="云台控制.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/保存-0.png" Crc="290083662" ABName="mainpreviewui" AssetName="保存-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/保存-1.png" Crc="740981502" ABName="mainpreviewui" AssetName="保存-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/全屏-0.png" Crc="1201521633" ABName="mainpreviewui" AssetName="全屏-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/全屏-1.png" Crc="2063460945" ABName="mainpreviewui" AssetName="全屏-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/关闭.png" Crc="2600556951" ABName="mainpreviewui" AssetName="关闭.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/关闭所有-0.png" Crc="612726774" ABName="mainpreviewui" AssetName="关闭所有-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/关闭所有-1.png" Crc="434462278" ABName="mainpreviewui" AssetName="关闭所有-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/分割-0.png" Crc="1107374559" ABName="mainpreviewui" AssetName="分割-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/分割-1.png" Crc="2137069679" ABName="mainpreviewui" AssetName="分割-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/删除.png" Crc="2942339849" ABName="mainpreviewui" AssetName="删除.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/刷新.png" Crc="1264599109" ABName="mainpreviewui" AssetName="刷新.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/单窗口轮巡-0.png" Crc="3482160582" ABName="mainpreviewui" AssetName="单窗口轮巡-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/单窗口轮巡-1.png" Crc="4075660406" ABName="mainpreviewui" AssetName="单窗口轮巡-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/单窗口轮巡-2.png" Crc="3041779366" ABName="mainpreviewui" AssetName="单窗口轮巡-2.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/回放.png" Crc="3404486886" ABName="mainpreviewui" AssetName="回放.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/声音-关.png" Crc="9804115" ABName="mainpreviewui" AssetName="声音-关.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/声音-开.png" Crc="3311471968" ABName="mainpreviewui" AssetName="声音-开.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/多窗口轮巡-0_.png" Crc="175745714" ABName="mainpreviewui" AssetName="多窗口轮巡-0_.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/多窗口轮巡-1_.png" Crc="3240458519" ABName="mainpreviewui" AssetName="多窗口轮巡-1_.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/多窗口轮巡-2_.png" Crc="1202785209" ABName="mainpreviewui" AssetName="多窗口轮巡-2_.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/左侧-底.png" Crc="3062121547" ABName="mainpreviewui" AssetName="左侧-底.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/控制器-底.png" Crc="1032887015" ABName="mainpreviewui" AssetName="控制器-底.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/搜索-0.png" Crc="1187390820" ABName="mainpreviewui" AssetName="搜索-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/搜索-1.png" Crc="2074479828" ABName="mainpreviewui" AssetName="搜索-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/搜索框-0.png" Crc="719396495" ABName="mainpreviewui" AssetName="搜索框-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/搜索框-1.png" Crc="394344255" ABName="mainpreviewui" AssetName="搜索框-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/摄像头-0.png" Crc="1085424884" ABName="mainpreviewui" AssetName="摄像头-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/摄像头-1.png" Crc="2110942532" ABName="mainpreviewui" AssetName="摄像头-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/摄像头2.png" Crc="4226565781" ABName="mainpreviewui" AssetName="摄像头2.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/播放.png" Crc="2251948320" ABName="mainpreviewui" AssetName="播放.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/收-0.png" Crc="3447256934" ABName="mainpreviewui" AssetName="收-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/收-1.png" Crc="4028161750" ABName="mainpreviewui" AssetName="收-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/收.png" Crc="2408076356" ABName="mainpreviewui" AssetName="收.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/放-0_.png" Crc="1580677252" ABName="mainpreviewui" AssetName="放-0_.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/放-1.png" Crc="3287781553" ABName="mainpreviewui" AssetName="放-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/放.png" Crc="3220709253" ABName="mainpreviewui" AssetName="放.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/文件夹-0.png" Crc="1686678782" ABName="mainpreviewui" AssetName="文件夹-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/文件夹-1.png" Crc="1508410702" ABName="mainpreviewui" AssetName="文件夹-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/文件夹-2.png" Crc="508100510" ABName="mainpreviewui" AssetName="文件夹-2.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/新建视图-0.png" Crc="2790888836" ABName="mainpreviewui" AssetName="新建视图-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/新建视图-1.png" Crc="2604252212" ABName="mainpreviewui" AssetName="新建视图-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/新建视图-2.png" Crc="3701065444" ABName="mainpreviewui" AssetName="新建视图-2.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/更多.png" Crc="1220413839" ABName="mainpreviewui" AssetName="更多.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/添加.png" Crc="594325237" ABName="mainpreviewui" AssetName="添加.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/编辑.png" Crc="1324718556" ABName="mainpreviewui" AssetName="编辑.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/自定义视图-0.png" Crc="1976879874" ABName="mainpreviewui" AssetName="自定义视图-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/自定义视图-1.png" Crc="1219814066" ABName="mainpreviewui" AssetName="自定义视图-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/自定义视图-2.png" Crc="253007970" ABName="mainpreviewui" AssetName="自定义视图-2.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/视频框-底.png" Crc="3762717137" ABName="mainpreviewui" AssetName="视频框-底.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/视频框.png" Crc="3821928402" ABName="mainpreviewui" AssetName="视频框.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/设置-0.png" Crc="1185690834" ABName="mainpreviewui" AssetName="设置-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/设置-1.png" Crc="2076974434" ABName="mainpreviewui" AssetName="设置-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/资源-0.png" Crc="1363715833" ABName="mainpreviewui" AssetName="资源-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/资源-1.png" Crc="1814597449" ABName="mainpreviewui" AssetName="资源-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/轮巡-0.png" Crc="526930775" ABName="mainpreviewui" AssetName="轮巡-0.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/轮巡-1.png" Crc="570981095" ABName="mainpreviewui" AssetName="轮巡-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/轮巡所有监控点-0_.png" Crc="3193353863" ABName="mainpreviewui" AssetName="轮巡所有监控点-0_.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/轮巡所有监控点-1_.png" Crc="1963615522" ABName="mainpreviewui" AssetName="轮巡所有监控点-1_.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/轮巡所有监控点-2_.png" Crc="4087224204" ABName="mainpreviewui" AssetName="轮巡所有监控点-2_.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/轮巡所有视图-0_.png" Crc="1570875344" ABName="mainpreviewui" AssetName="轮巡所有视图-0_.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/轮巡所有视图-1.png" Crc="3817523251" ABName="mainpreviewui" AssetName="轮巡所有视图-1.png" />
+  <ABList Path="Assets/Resources/UI/videopreviews/轮巡所有视图-2.png" Crc="2754261731" ABName="mainpreviewui" AssetName="轮巡所有视图-2.png" />
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/MandManagentPage.prefab" Crc="2652857580" ABName="mandmanagentpage" AssetName="MandManagentPage.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>mainpreviewbg</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/videorender/mask.prefab" Crc="4163594719" ABName="mask" AssetName="mask.prefab">
+    <ABDependce>mainpreviewbg</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/PeopleManagerPage.prefab" Crc="4169603188" ABName="peoplemanagerpage" AssetName="PeopleManagerPage.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>mainpreviewbg</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/searchbg.prefab" Crc="3994848452" ABName="searchbg" AssetName="searchbg.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/searchTxt.prefab" Crc="4011784150" ABName="searchtxt" AssetName="searchTxt.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Shader/YUV.mat" Crc="3191924737" ABName="shader" AssetName="YUV.mat">
+    <ABDependce>mainpreviewui</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Shader/YUVsUnlitShader.shader" Crc="287035323" ABName="shader" AssetName="YUVsUnlitShader.shader" />
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/Tip.prefab" Crc="3361656825" ABName="tip" AssetName="Tip.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/UserManagerPage.prefab" Crc="3979488589" ABName="usermanagerpage" AssetName="UserManagerPage.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>mainpreviewbg</ABDependce>
+    <ABDependce>peoplemanagerpage</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>fonts</ABDependce>
+    <ABDependce>mandmanagentpage</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/cameragroup/usertog.prefab" Crc="2724554064" ABName="usertog" AssetName="usertog.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/EquipManager/CameraItem/userTypeTog.prefab" Crc="2204153542" ABName="usertypetog" AssetName="userTypeTog.prefab">
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/videorender/VideoRender.prefab" Crc="2106399185" ABName="videorender" AssetName="VideoRender.prefab">
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>shader</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/VideoReplayPage.prefab" Crc="153659442" ABName="videoreplaypage" AssetName="VideoReplayPage.prefab">
+    <ABDependce>mainpreviewbg</ABDependce>
+    <ABDependce>mainpreviewui</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>fonts</ABDependce>
+    <ABDependce>peoplemanagerpage</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+  </ABList>
+  <ABList Path="Assets/GameData/Prefabs/MainView/Panel/VistorManagerPage.prefab" Crc="3764825824" ABName="vistormanagerpage" AssetName="VistorManagerPage.prefab">
+    <ABDependce>peoplemanagerpage</ABDependce>
+    <ABDependce>evencentertpage</ABDependce>
+    <ABDependce>mainpreviewbg</ABDependce>
+    <ABDependce>itemprefab1</ABDependce>
+    <ABDependce>fonts</ABDependce>
+  </ABList>
+</AssetBundleConfig>

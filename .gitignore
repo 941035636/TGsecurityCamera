@@ -1,0 +1,68 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Local builds and generated bundles
+[Bb]uild/
+[Bb]uilds/
+[Bb]uildTarget/
+[Aa]sset[Bb]undle/
+
+# IDE generated files
+.vs/
+.vscode/
+.idea/
+ExportedObj/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity/OS transient files
+sysinfo.txt
+crashlytics-build.properties
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+.DS_Store
+Thumbs.db
+
+# Keep Asset Store tools out of source control when generated locally
+Assets/AssetStoreTools*
+
+# Site-specific deployment data (contains camera topology and credentials)
+Assets/StreamingAssets/Configurations/AppRuntimeSettings.json
+Assets/StreamingAssets/Configurations/AppRuntimeSettings.json.meta
+Assets/StreamingAssets/Configurations/NvrConfiguration.json
+Assets/StreamingAssets/Configurations/NvrConfiguration.json.meta
+Assets/StreamingAssets/Configurations/CameraGroupConfiguration.json
+Assets/StreamingAssets/Configurations/CameraGroupConfiguration.json.meta
+Assets/StreamingAssets/Configurations/DoorGroupConfiguration.json
+Assets/StreamingAssets/Configurations/DoorGroupConfiguration.json.meta
+Assets/StreamingAssets/data.json
+Assets/StreamingAssets/data.json.meta
+
+# Commercial Unity plugins. Keep local licensed copies out of public Git history.
+Assets/AVProVideo/
+Assets/AVProVideo.meta
+Assets/InWeb/
+Assets/InWeb.meta
+Assets/UniversalMediaPlayer/
+Assets/UniversalMediaPlayer.meta
+Assets/Plugins/UMP Pro Win Mac Linux WebGL 2.0.3.unitypackage
+Assets/Plugins/UMP Pro Win Mac Linux WebGL 2.0.3.unitypackage.meta
