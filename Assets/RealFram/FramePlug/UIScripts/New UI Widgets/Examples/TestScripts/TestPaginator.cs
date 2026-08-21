@@ -1,0 +1,31 @@
+﻿namespace UIWidgets.Examples
+{
+	using UIWidgets;
+	using UnityEngine;
+	using UnityEngine.Serialization;
+
+	/// <summary>
+	/// Test Paginator.
+	/// </summary>
+	public class TestPaginator : MonoBehaviour
+	{
+		/// <summary>
+		/// ScrollRectPaginator.
+		/// </summary>
+		[SerializeField]
+		[FormerlySerializedAs("paginator")]
+		protected ScrollRectPaginator Paginator;
+
+		/// <summary>
+		/// Test.
+		/// </summary>
+		public void Test()
+		{
+			// pages count
+			 Log.Debug(Paginator.Pages);
+
+			// navigate to page
+			Paginator.CurrentPage = 2;
+		}
+	}
+}

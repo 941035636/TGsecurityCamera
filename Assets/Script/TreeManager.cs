@@ -1,0 +1,947 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+using UnityEngine.UI;
+using System;
+using static ManManagentUi;
+using zFramework.Media;
+//using WSX.HS;
+
+namespace SuperTreeView
+{
+    public class TreeManager : MonoBehaviour
+    {
+        public TreeView mTreeView;
+        public int mCurSelectedItemId = 0;
+        public string currentItemId = "";//当前选中id
+        string currentLevel = "";//当前选中父层级id拼接（逗号分割）
+
+        int mNewItemCount = 0;
+
+        List<OutlineInfo> outlineInfoList = new List<OutlineInfo>();
+        List<TreeViewItem> allTreeViewItemList = new List<TreeViewItem>();
+        public static string ChoiceAreaName = string.Empty;
+        public static string ChoiceAreaId = string.Empty;
+        private TreeViewItem currentItem = new TreeViewItem();
+
+        private bool inputFieldType = false;
+
+        private static TreeManager instance;
+        public static TreeManager GetInstance()
+        {
+            if (instance == null)
+            {
+                instance = new TreeManager();
+            }
+            return instance;
+        }
+        bool init = false;
+
+
+
+
+        void Start()
+        {
+            mTreeView.OnTreeListAddOneItem = OnTreeListAddOneItem;
+            mTreeView.OnTreeListDeleteOneItem = OnTreeListDeleteOneItem;
+            mTreeView.OnItemExpandBegin = OnItemExpandBegin;
+            mTreeView.OnItemCollapseBegin = OnItemCollapseBegin;
+            mTreeView.OnItemCustomEvent = OnItemCustomEvent;
+            mTreeView.InitView();
+
+
+
+
+            ////******************假数据动态拼接树开始****************************
+            //TreeViewItem item1 = mTreeView.AppendItem("ItemPrefab1");
+            //item1.GetComponent<ItemScript>().SetItemInfo("全部", "全部", "1");
+
+
+            //TreeViewItem childItem1_1 = item1.ChildTree.AppendItem("ItemPrefab1");
+            //childItem1_1.GetComponent<ItemScript>().SetItemInfo("技术部门", "技术部门", "1_1");
+            //TreeViewItem childItem1_2 = item1.ChildTree.AppendItem("ItemPrefab1");
+            //childItem1_2.GetComponent<ItemScript>().SetItemInfo("商务部门", "商务部门", "1_2");
+            //TreeViewItem childItem1_3 = item1.ChildTree.AppendItem("ItemPrefab1");
+            //childItem1_3.GetComponent<ItemScript>().SetItemInfo("行政部门", "行政部门", "1_3");
+            //TreeViewItem childItem1_4 = item1.ChildTree.AppendItem("ItemPrefab1");
+            //childItem1_4.GetComponent<ItemScript>().SetItemInfo("总裁办", "总裁办", "1_4");
+
+
+
+            //TreeViewItem childItem1_1_1 = childItem1_1.ChildTree.AppendItem("ItemPrefab1");
+            //childItem1_1_1.GetComponent<ItemScript>().SetItemInfo("技术一部", "技术一部", "1_1_1");
+            //TreeViewItem childItem1_1_2 = childItem1_1.ChildTree.AppendItem("ItemPrefab1");
+            //childItem1_1_2.GetComponent<ItemScript>().SetItemInfo("技术二部", "技术二部", "1_1_2");
+
+            //OutlineInfo outline0 = new OutlineInfo();
+            //outline0.ParentId = "0";
+            //outline0.OutlineId = "1";
+            //outline0.OutlineName = "全部";
+            //OutlineInfo outline = new OutlineInfo();
+            //outline.ParentId = "1";
+            //outline.OutlineId = "2";
+            //outline.OutlineName = "生活区";
+            //OutlineInfo outline1 = new OutlineInfo();
+            //outline1.ParentId = "2";
+            //outline1.OutlineId = "3";
+            //outline1.OutlineName = "生活区一号门";
+            //OutlineInfo outline2 = new OutlineInfo();
+            //outline2.ParentId = "2";
+            //outline2.OutlineId = "4";
+            //outline2.OutlineName = "生活区二号门";
+            //outlineInfoList.Add(outline0);
+            //outlineInfoList.Add(outline);
+            //outlineInfoList.Add(outline1);
+            //outlineInfoList.Add(outline2);
+            //Init(outlineInfoList);
+
+            ////******************假数据动态拼接树结束****************************
+
+            //******************后台数据动态拼接树开始****************************
+            //outlineInfoList = ServiceManager.Instance().GetAllTree();
+            //allTreeViewItemList = new List<TreeViewItem>();
+            //TreeViewItem item1 = new TreeViewItem();
+            //for (int i = 0; i < outlineInfoList.Count; i++)
+            //{
+            //    if (string.IsNullOrEmpty(outlineInfoList[i].ParentId) || int.Parse(outlineInfoList[i].ParentId) == 0)
+            //    {
+            //        item1 = mTreeView.AppendItem("ItemPrefab1");
+            //        item1.GetComponent<ItemScript>().id = outlineInfoList[i].OutlineId;
+            //        item1.GetComponent<ItemScript>().parentId = outlineInfoList[i].ParentId;
+            //        item1.GetComponent<ItemScript>().labelText.text = outlineInfoList[i].OutlineName;
+            //        item1.GetComponent<ItemScript>().SetItem(item1.GetComponent<ItemScript>());
+            //        allTreeViewItemList.Add(item1);
+            //    }
+            //    else
+            //    {
+            //        for (int j = 0; j < allTreeViewItemList.Count; j++)
+            //        {
+            //            if (allTreeViewItemList[j].GetComponent<ItemScript>().id.Equals(outlineInfoList[i].ParentId))
+            //            {
+            //                TreeViewItem childItem = allTreeViewItemList[j].ChildTree.AppendItem("ItemPrefab1");
+            //                childItem.GetComponent<ItemScript>().id = outlineInfoList[i].OutlineId;
+            //                childItem.GetComponent<ItemScript>().parentId = outlineInfoList[i].ParentId;
+            //                childItem.GetComponent<ItemScript>().labelText.text = outlineInfoList[i].OutlineName;
+            //                childItem.GetComponent<ItemScript>().SetItem(childItem.GetComponent<ItemScript>());
+            //                allTreeViewItemList.Add(childItem);
+            //            }
+            //        }
+            //    }
+            //}
+            //OnItemCustomEvent(item1, CustomEvent.ItemClicked, "");
+            //******************后台数据动态拼接树结束****************************
+
+            //EventCenter.addlistener<List<OutlineInfo>>(Eventdefine.TreeView,Init);
+
+        }
+
+
+        //private void OnDestroy()
+        //{
+        //    EventCenter.RemoveListener<List<OutlineInfo>>(Eventdefine.TreeView, Init);
+        //}
+
+
+        /// <summary>
+        /// 封装外部调用初始化分组接口
+        /// </summary>
+        //public void Init(List<OutlineInfo> outlineInfoList) 
+        //{
+        //    allTreeViewItemList = new List<TreeViewItem>();
+        //    TreeViewItem item1 = new TreeViewItem();
+        //    for (int i = 0; i < outlineInfoList.Count; i++)
+        //    {
+        //        if (string.IsNullOrEmpty(outlineInfoList[i].ParentId) || int.Parse(outlineInfoList[i].ParentId) == 0)
+        //        {
+        //            item1 = mTreeView.AppendItem("ItemPrefab1");
+        //            item1.GetComponent<ItemScript>().id = outlineInfoList[i].OutlineId;
+        //            item1.GetComponent<ItemScript>().parentId = outlineInfoList[i].ParentId;
+        //            item1.GetComponent<ItemScript>().labelText.text = outlineInfoList[i].OutlineName;
+        //            item1.GetComponent<ItemScript>().SetItem(item1.GetComponent<ItemScript>());
+        //            allTreeViewItemList.Add(item1);
+        //        }
+        //        else
+        //        {
+        //            for (int j = 0; j < allTreeViewItemList.Count; j++)
+        //            {
+        //                if (allTreeViewItemList[j].GetComponent<ItemScript>().id.Equals(outlineInfoList[i].ParentId))
+        //                {
+        //                    TreeViewItem childItem = allTreeViewItemList[j].ChildTree.AppendItem("ItemPrefab1");
+        //                    childItem.GetComponent<ItemScript>().id = outlineInfoList[i].OutlineId;
+        //                    childItem.GetComponent<ItemScript>().parentId = outlineInfoList[i].ParentId;
+        //                    childItem.GetComponent<ItemScript>().labelText.text = outlineInfoList[i].OutlineName;
+        //                    childItem.GetComponent<ItemScript>().SetItem(childItem.GetComponent<ItemScript>());
+        //                    childItem.GetComponent<ItemScript>().clickBtn.onClick.AddListener(()=> {
+
+        //                        Log.Debug("点击了：" + childItem.GetComponent<ItemScript>().labelText.text);
+        //                    });
+        //                    allTreeViewItemList.Add(childItem);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    OnItemCustomEvent(item1, CustomEvent.ItemClicked, "");
+
+
+        //}
+
+
+
+
+        private void Update()
+        {
+
+            ///****************处理修改、新增层级，取消聚焦触发**********************************
+            if (currentItem != null && currentItem.GetComponent<ItemScript>().IsSelected && inputFieldType)
+            {
+                int status = 1;
+                int temp = -1;
+                //增加log
+                //LogInfo logInfo = new LogInfo();
+                //logInfo.UserName = DataBase.Instance().loginUserInfo.UserName;
+                inputFieldType = false;
+                OutlineInfo outlineInfo = new OutlineInfo();
+                outlineInfo.OutlineName = currentItem.GetComponent<ItemScript>().labelText.text;
+                outlineInfo.ParentId = currentItem.GetComponent<ItemScript>().parentId;
+                outlineInfo.Level = currentLevel;
+                //新增
+                if (string.IsNullOrEmpty(currentItem.GetComponent<ItemScript>().id))
+                {
+                    //temp = ServiceManager.Instance().AddOutlineInfo(outlineInfo);
+                    //logInfo.OperationName = Common.outLineAddLog;
+                }
+                else
+                {//修改
+                    //outlineInfo.OutlineId = currentItem.GetComponent<ItemScript>().id;
+                    //temp = ServiceManager.Instance().ChangeOutlineInfo(outlineInfo);
+                    //logInfo.OperationName = Common.outLineEditLog;
+                }
+                if (temp == 0)
+                {
+                    status = 0;
+                }
+                //logInfo.UserName = DataBase.Instance().loginUserInfo.UserName;
+                //logInfo.OperationStatus = status.ToString();
+                //ServiceManager.Instance().AddLog(logInfo);
+            }
+        }
+
+        public void OnChangeInputField()
+        {
+            inputFieldType = true;
+        }
+
+
+        void OnItemExpandBegin(TreeViewItem item)
+        {
+            ItemScript st = item.GetComponent<ItemScript>();
+            st.SetExpandStatus(true);
+        }
+
+        void OnItemCollapseBegin(TreeViewItem item)
+        {
+            ItemScript st = item.GetComponent<ItemScript>();
+            st.SetExpandStatus(false);
+        }
+
+
+
+        public void OnItemCustomEvent(TreeViewItem item, CustomEvent customEvent, System.Object param)
+        {
+            if (customEvent == CustomEvent.ItemClicked)
+            {
+                ItemScript st = item.GetComponent<ItemScript>();
+                //OutLineSetPage.o_l.st = st;
+                if (mCurSelectedItemId > 0)
+                {
+                    if (item.ItemId == mCurSelectedItemId)
+                    {
+                        return;
+                    }
+                    TreeViewItem curSelectedItem = mTreeView.GetTreeItemById(mCurSelectedItemId);
+                    if (curSelectedItem != null)
+                    {
+                        curSelectedItem.GetComponent<ItemScript>().IsSelected = false;
+                    }
+                    mCurSelectedItemId = 0;
+                }
+                st.IsSelected = true;
+                mCurSelectedItemId = item.ItemId;
+                //选中后查询对应id大纲列表
+                //OutLineSetPage.o_l.ItemId = st.id;
+                //OutLineSetPage.o_l.Level = st.id;
+                currentItemId = st.id;
+                TreeViewItem pItem = item;
+                //拼level
+                for (int i = 0; i < allTreeViewItemList.Count; i++)
+                {
+                    TreeViewItem cItem = pItem.transform.parent.parent.GetComponent<TreeViewItem>();
+                    if (cItem != null && cItem.name.Contains("ItemPrefab1"))
+                    {
+                        currentLevel += "," + cItem.GetComponent<ItemScript>().id;
+                        //OutLineSetPage.o_l.Level += "," + cItem.GetComponent<ItemScript>().id;
+                        pItem = cItem;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                //if (!"1".Equals(st.id))
+                //{
+                //    OutLineSetPage.o_l.ItemParentId = st.transform.parent.parent.GetComponent<ItemScript>().id;
+                //}
+                //else
+                //{
+                //    OutLineSetPage.o_l.ItemParentId = null;
+                //}
+                //OutLineSetPage.o_l.refresh = true;
+                ChoiceAreaName = st.labelText.text;
+                ChoiceAreaId = st.id;
+                //选中后请求id和类型对应的列表
+                RequestTypesDevs(st.id, st.labelText.text, st.type);
+            }
+        }
+        /// <summary>
+        /// 请求某一区域下的设备信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="areaname"></param>
+        /// <param name="type"></param>
+        private void RequestTypesDevs(string id, string areaname, int type)
+        {
+            Log.Debug("选择的区域id是:" + id + "选择的区域类型是:"+type);
+            switch (type)
+            {
+                case 0:
+                    EventCenter.BroadCast(Eventdefine.OndestoryOneAreaDevs);
+                    break;
+                case 1:
+                    string url = "http://" +GameStart.IP  + "/api/personnel/tg/area/info?pageNum=1&pageSize=10000&areaId=" + id + "&areaName=" + areaname + "&areaType=" + 1;
+                    HttpNetManager.GetInstance().SendDataStr(url, GetOneDoorGroupDevs, false, false, false);
+                    break;
+                case 2:
+                    string url2 = "http://" +GameStart.IP  + "/api/personnel/tg/area/info?pageNum=1&pageSize=10000&areaId=" + id + "&areaName=" + areaname + "&areaType=" + 2;
+
+                    //string url2 = "http://" +GameStart.IP  + "/api/personnel/tg/area/info?pageNum=1&pageSize=10000&areaId=&areaName=&areaType=" + 2;
+                    HttpNetManager.GetInstance().SendDataStr(url2, GetOneCameraGroupDevs, false, false, false);
+                    break;
+                default:
+                    break;
+            }
+
+
+
+
+        }
+        AreaDevsData areaDevsData;
+        /// <summary>
+        /// 获取某一区域下的门禁设备信息回调
+        /// </summary>
+        /// <param name="args"></param>
+        public void GetOneDoorGroupDevs(HttpCallBackArgs args)
+        {
+            Log.Debug("该门禁分组下设备信息：" + args.Value);
+            if (!string.IsNullOrEmpty(args.Value))
+            {
+
+                areaDevsData = JsonUtility.FromJson<AreaDevsData>(args.Value);
+
+                if (areaDevsData.records.Count != 0)
+                {
+                    for (int i = 0; i < areaDevsData.records.Count; i++)
+                    {
+                        int index = i;
+                        //InitDoorGroupsDevs(areaDevsData.records[index].devList);
+                        EventCenter.BroadCast(Eventdefine.InitDoorGroupsDevs, ChoiceAreaName, areaDevsData.records[index].devList);
+                    }
+                }
+
+
+            }
+        }
+
+        /// 获取某一区域下的监控设备信息回调
+        /// </summary>
+        /// <param name="args"></param>
+        public void GetOneCameraGroupDevs(HttpCallBackArgs args)
+        {
+            Log.Debug("该监控分组下设备信息：" + args.Value);
+            if (!string.IsNullOrEmpty(args.Value))
+            {
+
+                areaDevsData = JsonUtility.FromJson<AreaDevsData>(args.Value);
+
+                if (areaDevsData.records.Count != 0)
+                {
+                    for (int i = 0; i < areaDevsData.records.Count; i++)
+                    {
+                        int index = i;
+                        //InitDoorGroupsDevs(areaDevsData.records[index].devList);
+                        EventCenter.BroadCast(Eventdefine.InitCameraGroupsDevs, ChoiceAreaName, areaDevsData.records[index].devList);
+                    }
+                }
+
+
+            }
+        }
+
+        void OnTreeListAddOneItem(TreeList treeList)
+        {
+
+            int count = treeList.ItemCount;
+            TreeViewItem parentTreeItem = treeList.ParentTreeItem;
+            if (count > 0 && parentTreeItem != null)
+            {
+                ItemScript st = parentTreeItem.GetComponent<ItemScript>();
+                st.SetExpandBtnVisible(true);
+                st.SetExpandStatus(parentTreeItem.IsExpand);
+
+
+            }
+
+
+        }
+
+
+        [Serializable]
+        public class Codedata
+        {
+            public string msg = string.Empty;
+            public int code;
+        }
+
+        [Serializable]
+        public class AddGroupData 
+        {
+            public string msg = string.Empty;
+            public int code;
+            public AreaInfo data;
+        }
+        [Serializable]
+        public class AreaInfo 
+        {
+            public int id;
+            public string areaName = string.Empty;
+            public string remark = string.Empty;
+            public int areaType;
+            public int parentId;
+            public string level = string.Empty;
+        }
+
+        public void AddCameraAreaCallback(HttpCallBackArgs args)
+        {
+
+            Log.Debug("收到新建监控分组回传信息：" + args.Value);
+
+            if (!string.IsNullOrEmpty(args.Value))
+            {
+                AddGroupData data = JsonUtility.FromJson<AddGroupData>(args.Value);
+                if (data.code == 400)
+                {
+
+                    GameStart.Instance.ShowTip(data.msg);
+                    OnDeleteCameraBtnClicked();
+                }
+                else if (data.code == 200)
+                {
+                    GameStart.Instance.ShowTip("添加分组成功");
+                    newCameraGroupNames = data.data.areaName;
+                    ChoiceAreaName = data.data.areaName;
+                    ChoiceAreaId = data.data.id.ToString();
+                    EventCenter.BroadCast<string,List<NVRInformation>>(Eventdefine.InitCameraGroupsDevs,newCameraGroupNames,new List<NVRInformation>());
+                }
+                newCameraGroupNames = string.Empty;
+
+            }
+
+
+
+
+        }
+
+        public void AddDoorAreaCallback(HttpCallBackArgs args)
+        {
+
+            Log.Debug("收到新建监控分组回传信息：" + args.Value);
+
+            if (!string.IsNullOrEmpty(args.Value))
+            {
+                AddGroupData data = JsonUtility.FromJson<AddGroupData>(args.Value);
+                if (data.code == 400)
+                {
+                    GameStart.Instance.ShowTip(data.msg);
+                    OnDeleteCameraBtnClicked();
+                }
+                else if (data.code == 200)
+                {
+                    GameStart.Instance.ShowTip("添加分组成功");
+                    newDoorGroupNames = data.data.areaName;
+                    ChoiceAreaName = data.data.areaName;
+                    ChoiceAreaId = data.data.id.ToString();
+                    EventCenter.BroadCast<string, List<NVRInformation>>(Eventdefine.InitDoorGroupsDevs, newDoorGroupNames, new List<NVRInformation>());
+                }
+                newDoorGroupNames = string.Empty;
+
+            }
+
+
+
+
+        }
+
+
+        public void EditorCameraAreaCallback(HttpCallBackArgs args)
+        {
+
+            Log.Debug("收到修改分组回传信息：" + args.Value);
+
+            if (!string.IsNullOrEmpty(args.Value))
+            {
+                Codedata data = JsonUtility.FromJson<Codedata>(args.Value);
+                if (data.code == 400)
+                {
+                    GameStart.Instance.ShowTip(data.msg);
+                    currentItem.GetComponent<ItemScript>().labelText.text = OldName;
+                    ChoiceAreaName = OldName;
+                }
+                else if (data.code == 200)
+                {
+                    GameStart.Instance.ShowTip("修改分组成功");
+                   
+                }
+
+
+            }
+
+
+
+
+        }
+
+
+
+        void OnTreeListDeleteOneItem(TreeList treeList)
+        {
+            int count = treeList.ItemCount;
+            TreeViewItem parentTreeItem = treeList.ParentTreeItem;
+            if (count == 0 && parentTreeItem != null)
+            {
+                ItemScript st = parentTreeItem.GetComponent<ItemScript>();
+                st.SetExpandBtnVisible(false);
+            }
+        }
+
+        TreeViewItem CurSelectedItem
+        {
+            get
+            {
+                if (mCurSelectedItemId <= 0)
+                {
+                    return null;
+                }
+                TreeViewItem item = mTreeView.GetTreeItemById(mCurSelectedItemId);
+                if (item == null)
+                {
+                    mCurSelectedItemId = 0;
+                    return null;
+                }
+                return item;
+            }
+        }
+
+        public void OnExpandAllBtnClicked()
+        {
+            mTreeView.ExpandAllItem();
+        }
+        public void OnCollapseAllBtnClicked()
+        {
+            mTreeView.CollapseAllItem();
+        }
+
+        public void OnExpandBtnClicked()
+        {
+            TreeViewItem item = CurSelectedItem;
+            if (item == null)
+            {
+                 Log.Debug("Please Select a Item First");
+                return;
+            }
+            item.Expand();
+        }
+
+        public void OnCollapseBtnClicked()
+        {
+            TreeViewItem item = CurSelectedItem;
+            if (item == null)
+            {
+                 Log.Debug("Please Select a Item First");
+                return;
+            }
+            item.Collapse();
+        }
+
+
+        #region
+        public void OnInsertBeforeBtnClicked()
+        {
+            mNewItemCount++;
+            if (mTreeView.IsEmpty)
+            {
+                TreeViewItem childItem = mTreeView.InsertItem(0, "ItemPrefab1");
+                childItem.GetComponent<ItemScript>().SetItemInfo("Movie", "Movie" + mNewItemCount);
+            }
+            else
+            {
+                TreeViewItem item = CurSelectedItem;
+                if (item == null)
+                {
+                     Log.Debug("Please Select a Item First");
+                    return;
+                }
+                TreeViewItem childItem = item.ParentTreeList.InsertItem(item.ItemIndex, "ItemPrefab1");
+                childItem.GetComponent<ItemScript>().SetItemInfo("Movie", "Movie" + mNewItemCount);
+            }
+
+        }
+
+        public void OnInsertAfterBtnClicked()
+        {
+            mNewItemCount++;
+            if (mTreeView.IsEmpty)
+            {
+                TreeViewItem childItem = mTreeView.InsertItem(0, "ItemPrefab1");
+                childItem.GetComponent<ItemScript>().SetItemInfo("Movie", "Movie" + mNewItemCount);
+            }
+            else
+            {
+                TreeViewItem item = CurSelectedItem;
+                if (item == null)
+                {
+                     Log.Debug("Please Select a Item First");
+                    return;
+                }
+                TreeViewItem childItem = item.ParentTreeList.InsertItem(item.ItemIndex + 1, "ItemPrefab1");
+                childItem.GetComponent<ItemScript>().SetItemInfo("Movie", "Movie" + mNewItemCount);
+            }
+
+        }
+
+        #endregion
+
+
+        private string newCameraGroupNames = string.Empty;
+        public void OnAddCameraChildBtnClicked(bool ison)
+        {
+            if (ison) 
+            {
+                if (LoginManager.Ins.IsCameraSet)
+                {
+
+                    TreeViewItem childItem = new TreeViewItem();
+                    if (mTreeView.IsEmpty)
+                    {
+                        childItem = mTreeView.AppendItem("ItemPrefab1");
+                        childItem.GetComponent<ItemScript>().SetItemInfo("新建大纲", "新建大纲" + mNewItemCount);
+                    }
+                    else
+                    {
+                        TreeViewItem item = CurSelectedItem;
+                        if (item == null)
+                        {
+                             Log.Debug("Please Select a Item First");
+                            return;
+                        }
+                        childItem = item.ChildTree.AppendItem("ItemPrefab1");
+                        childItem.GetComponent<ItemScript>().parentId = item.GetComponent<ItemScript>().id;
+                        childItem.GetComponent<ItemScript>().labelText.text = "新建大纲";
+                        childItem.GetComponent<ItemScript>().SetItem(childItem.GetComponent<ItemScript>());
+
+                    }
+                    OnItemCustomEvent(childItem, CustomEvent.ItemClicked, "");
+                    childItem.GetComponent<ItemScript>().labelText.interactable = true;
+                    childItem.GetComponent<ItemScript>().labelText.Select();
+                    currentItem = childItem;
+
+                    childItem.GetComponent<ItemScript>().labelText.onEndEdit.AddListener((txt) =>
+                    {
+
+                        Log.Debug("走的添加区域");
+                        BuildGroup element = new BuildGroup();
+                        element.areaName = txt;
+                        if (childItem.GetComponent<ItemScript>().parentId != null)
+                            element.parentId = int.Parse(childItem.GetComponent<ItemScript>().parentId);
+                        else
+                            element.parentId = 0;
+                        element.areaType = 2;
+                        newCameraGroupNames = txt;
+                        ChoiceAreaName = txt;
+                        childItem.GetComponent<ItemScript>().type = 2;
+                        HttpNetManager.GetInstance().SendDataObj("http://" + GameStart.IP + "/api/personnel/tg/area/info", AddCameraAreaCallback, true, true, element);
+                    });
+                    mNewItemCount++;
+                }
+                else { GameStart.Instance.ShowTip("当前用户没有监控配置权限"); }
+
+
+            }
+          
+            
+          
+
+
+        }
+        private string newDoorGroupNames = string.Empty;
+        public void OnAddDoorChildBtnClicked(bool ison)
+        {
+            if (ison) 
+            {
+                if (LoginManager.Ins.IsDoorSet)
+                {
+
+
+                    mNewItemCount++;
+                    TreeViewItem childItem = new TreeViewItem();
+                    if (mTreeView.IsEmpty)
+                    {
+                        childItem = mTreeView.AppendItem("ItemPrefab1");
+                        childItem.GetComponent<ItemScript>().SetItemInfo("新建大纲", "新建大纲" + mNewItemCount);
+                    }
+                    else
+                    {
+                        TreeViewItem item = CurSelectedItem;
+                        if (item == null)
+                        {
+                             Log.Debug("Please Select a Item First");
+                            return;
+                        }
+                        childItem = item.ChildTree.AppendItem("ItemPrefab1");
+                        childItem.GetComponent<ItemScript>().parentId = item.GetComponent<ItemScript>().id;
+                        childItem.GetComponent<ItemScript>().labelText.text = "新建大纲";
+                        childItem.GetComponent<ItemScript>().SetItem(childItem.GetComponent<ItemScript>());
+
+                    }
+                    OnItemCustomEvent(childItem, CustomEvent.ItemClicked, "");
+                    childItem.GetComponent<ItemScript>().labelText.interactable = true;
+                    childItem.GetComponent<ItemScript>().labelText.Select();
+                    currentItem = childItem;
+
+                    childItem.GetComponent<ItemScript>().labelText.onEndEdit.AddListener((txt) =>
+                    {
+
+                        Log.Debug("走的添加区域");
+                        BuildGroup element = new BuildGroup();
+                        element.areaName = txt;
+                        if (childItem.GetComponent<ItemScript>().parentId != null)
+                            element.parentId = int.Parse(childItem.GetComponent<ItemScript>().parentId);
+                        else
+                            element.parentId = 0;
+                        element.areaType = 1;
+                        newDoorGroupNames = txt;
+                        childItem.GetComponent<ItemScript>().type = 1;
+                        HttpNetManager.GetInstance().SendDataObj("http://" + GameStart.IP + "/api/personnel/tg/area/info", AddDoorAreaCallback, true, true, element);
+                    });
+                }
+                else
+                {
+                    GameStart.Instance.ShowTip("当前用户没有门禁配置权限！");
+                }
+
+
+            }
+       
+
+
+
+        }
+        //新建分组数据结构
+        [Serializable]
+        public class BuildGroup
+        {
+
+            public int id;//区域id
+            public string areaName = string.Empty;//区域名字
+            public string remark = string.Empty;
+            public int areaType;
+            public int parentId;//父级id
+            public string level = string.Empty;
+            public List<Element> children = new List<Element>();//子元素
+
+
+        }
+
+        public void OnDeleteCameraBtnClicked()
+        {
+            if (LoginManager.Ins.IsCameraSet)
+            {
+                TreeViewItem item = CurSelectedItem;
+                if (item == null)
+                {
+                     Log.Debug("Please Select a Item First");
+                    return;
+                }
+                List<string> outlineIds = new List<string>();
+                outlineIds.Add(currentItemId);
+                item.ParentTreeList.DeleteItem(item);
+
+                ////****************删除数据库数据*******************
+                BuildGroup element = new BuildGroup();
+                element.areaName = item.GetComponent<ItemScript>().name;
+                element.id = int.Parse(item.GetComponent<ItemScript>().id);
+                element.parentId = int.Parse(item.GetComponent<ItemScript>().parentId);
+                element.areaType = 2;
+                HttpNetManager.GetInstance().SendDataObj("http://" +GameStart.IP  + "/api/personnel/tg/del/area/info", DelCameraAreaCallback, true, true, element);
+            }
+            else 
+            {
+                GameStart.Instance.ShowTip("当前用户没有监控配置权限");
+            }
+
+        }
+
+        public void OnDeleteDoorBtnClicked()
+        {
+            if (LoginManager.Ins.IsDoorSet)
+            {
+                TreeViewItem item = CurSelectedItem;
+                if (item == null)
+                {
+                     Log.Debug("Please Select a Item First");
+                    return;
+                }
+                List<string> outlineIds = new List<string>();
+                outlineIds.Add(currentItemId);
+                item.ParentTreeList.DeleteItem(item);
+
+                ////****************删除数据库数据*******************
+                BuildGroup element = new BuildGroup();
+                element.areaName = item.GetComponent<ItemScript>().name;
+                element.id = int.Parse(item.GetComponent<ItemScript>().id);
+                element.parentId = int.Parse(item.GetComponent<ItemScript>().parentId);
+                element.areaType = 2;
+                HttpNetManager.GetInstance().SendDataObj("http://" +GameStart.IP  + "/api/personnel/tg/del/area/info", DelCameraAreaCallback, true, true, element);
+            }
+            else
+            {
+                GameStart.Instance.ShowTip("当前用户没有门禁配置权限");
+            }
+         
+        }
+
+        public void DelCameraAreaCallback(HttpCallBackArgs args)
+        {
+            if (LoginManager.Ins.IsCameraSet)
+            {
+                Log.Debug("收到删除监控分组回传信息：" + args.Value);
+
+                if (!string.IsNullOrEmpty(args.Value))
+                {
+                    Codedata data = JsonUtility.FromJson<Codedata>(args.Value);
+                    if (data.code == 400)
+                    {
+                        GameStart.Instance.ShowTip(data.msg);
+
+                    }
+                    else if (data.code == 200)
+                    {
+                        GameStart.Instance.ShowTip("删除分组成功");
+                    }
+
+
+                }
+            }
+            else
+            {
+                GameStart.Instance.ShowTip("当前用户没有监控配置权限");
+            }
+
+          
+
+
+
+
+        }
+        //外部调用删除
+        public void OnDeleteBtnClicked(TreeViewItem item)
+        {
+         
+            //Log.Error("删除分组");
+            if (item == null)
+            {
+                Log.Debug("Please Select a Item First");
+                return;
+            }
+            List<string> outlineIds = new List<string>();
+            outlineIds.Add(currentItemId);
+            item.ParentTreeList.DeleteItem(item);
+          
+
+        }
+
+
+        public void OnBackBtnClicked()
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        }
+
+        //新建编辑或者改名
+        public string OldName = string.Empty;
+        public void OnCameraEditBtnClicked()
+        {
+            TreeViewItem item = CurSelectedItem;
+            if (item == null)
+            {
+                 Log.Debug("Please Select a Item First");
+                return;
+            }
+            item.GetComponent<ItemScript>().labelText.interactable = true;
+            item.GetComponent<ItemScript>().labelText.Select();
+            currentItem = item;
+            OldName = currentItem.GetComponent<ItemScript>().labelText.text;
+            item.GetComponent<ItemScript>().labelText.onEndEdit.AddListener((txt) =>
+            {
+
+              
+                BuildGroup element = new BuildGroup();
+                element.areaName = txt;
+                element.parentId = int.Parse(item.GetComponent<ItemScript>().parentId);
+                element.areaType = 2;
+                element.id = int.Parse(item.GetComponent<ItemScript>().id);
+                Log.Debug("走的区域改名:" + JsonUtility.ToJson(element,true)) ;
+                ChoiceAreaName = txt;
+                ChoiceAreaId = element.id.ToString();
+                HttpNetManager.GetInstance().SendDataObj("http://" +GameStart.IP  + "/api/personnel/tg/area/name", EditorCameraAreaCallback, true, true, element);
+            });
+
+        }
+        public void OnDoorEditBtnClicked()
+        {
+            TreeViewItem item = CurSelectedItem;
+            if (item == null)
+            {
+                 Log.Debug("Please Select a Item First");
+                return;
+            }
+            item.GetComponent<ItemScript>().labelText.interactable = true;
+            item.GetComponent<ItemScript>().labelText.Select();
+            currentItem = item;
+            OldName = currentItem.GetComponent<ItemScript>().labelText.text;
+            item.GetComponent<ItemScript>().labelText.onEndEdit.AddListener((txt) =>
+            {
+
+                Log.Debug("走的区域改名");
+                BuildGroup element = new BuildGroup();
+                element.areaName = txt;
+                element.parentId = int.Parse(item.GetComponent<ItemScript>().parentId);
+                element.areaType = 1;
+                element.id = int.Parse(item.GetComponent<ItemScript>().id);
+                ChoiceAreaName = txt;
+                ChoiceAreaId = element.id.ToString();
+                HttpNetManager.GetInstance().SendDataObj("http://" +GameStart.IP  + "/api/personnel/tg/area/name", EditorCameraAreaCallback, true, true, element);
+            });
+
+        }
+    }
+}
