@@ -334,9 +334,8 @@ public class FirstUi : Window
 
     void OnClickT_CloseMainPreview()
     {
-
-        //UIManager.Instance.HideWnd(ConStr.MAINPREVIEW);
-        UIManager.Instance.CloseWnd(ConStr.MAINPREVIEW, false);
+        UIManager.Instance.CloseWnd(ConStr.MAINPREVIEW, true);
+        m_MainPanel.T_MainPreviewToggle.isOn = false;
         m_MainPanel.T_MainPreviewToggle.gameObject.SetActive(false);
     }
 

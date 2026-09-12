@@ -68,7 +68,7 @@ public class UIManger : MonoBehaviour
                 {
                     int temp = i;
                     if (TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>() != null && TreeviewReplay.transform.GetChild(temp).name == "ItemPrefab1(Clone)")
-                        TreeManagerPreview.GetInstance().OnDeleteBtnClicked(TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>());
+                        TreeManagerReplay.GetInstance().OnDeleteBtnClicked(TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>());
                 }
 
             }
@@ -99,7 +99,7 @@ public class UIManger : MonoBehaviour
             {
                 int temp = i;
                 if (TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>() != null && TreeviewReplay.transform.GetChild(temp).name == "ItemPrefab1(Clone)")
-                    TreeManagerPreview.GetInstance().OnDeleteBtnClicked(TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>());
+                    TreeManagerReplay.GetInstance().OnDeleteBtnClicked(TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>());
             }
 
         }
@@ -250,7 +250,7 @@ public class UIManger : MonoBehaviour
             {
                 int temp = i;
                 if (TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>() != null && TreeviewReplay.transform.GetChild(temp).name == "ItemPrefab1(Clone)")
-                    TreeManagerPreview.GetInstance().OnDeleteBtnClicked(TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>());
+                    TreeManagerReplay.GetInstance().OnDeleteBtnClicked(TreeviewReplay.transform.GetChild(temp).GetComponent<TreeViewItem>());
             }
 
         }

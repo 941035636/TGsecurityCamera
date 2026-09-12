@@ -8,6 +8,7 @@ using UnityTimer;
 using zFramework.Media;
 using Newtonsoft;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static ManManagentUi;
 using SuperTreeView;
 using System.Collections;
@@ -254,6 +255,19 @@ public class UserManagerUi : Window
     Menu peopleManagerMdata = new Menu();//人员管理
     Menu UserManagerMdata = new Menu();//用户管理
     private rolelist rolesList;//存储请求所有角色信息模型
+    private long pendingSavedRoleId = -1;
+    private bool isApplyingRolePermissions;
+    private bool suppressPermissionTreeEvents;
+    private readonly HashSet<string> previewSelectedKeys = new HashSet<string>();
+    private readonly HashSet<string> replaySelectedKeys = new HashSet<string>();
+    private List<GetAreaGroupDevs> previewAreaRoots = new List<GetAreaGroupDevs>();
+    private List<GetAreaGroupDevs> replayAreaRoots = new List<GetAreaGroupDevs>();
+    private readonly Dictionary<string, TreeViewItem> permissionTreeItems = new Dictionary<string, TreeViewItem>();
+    private readonly Dictionary<string, string> permissionTreeParents = new Dictionary<string, string>();
+    private readonly Dictionary<string, List<string>> permissionTreeChildren = new Dictionary<string, List<string>>();
+    private bool permissionTreeIsReplay;
+    private int activePermissionTreeMenuId;
+    private Sprite permissionCameraIcon;
     Transform user_roleContent;
 
     List<GetAreaGroupDevs> MonitorPreviewList = new List<GetAreaGroupDevs>();
@@ -295,8 +309,8 @@ public class UserManagerUi : Window
         AddToggleClickListener(MainUserManager.cdoorSet, cdoorSetlistener);
         AddToggleClickListener(MainUserManager.ppreviewtog, ppreviewtoglistener);
         AddToggleClickListener(MainUserManager.cpreview, cpreviewlistener);
-        //AddToggleClickListener(MainUserManager.preplaytog, preplaytoglistener);
-        //AddToggleClickListener(MainUserManager.creplay, creplaylistener);
+        AddToggleClickListener(MainUserManager.preplaytog, preplaytoglistener);
+        AddToggleClickListener(MainUserManager.creplay, creplaylistener);
         AddToggleClickListener(MainUserManager.pcameraeventtog, pcameraeventtoglistener);
         AddToggleClickListener(MainUserManager.ccameraevent, cCameraEventlistener);
         AddToggleClickListener(MainUserManager.pdooreventtog, pdooreventtoglistener);
@@ -365,6 +379,8 @@ public class UserManagerUi : Window
         }
         previewMdata.areaList.Clear();//模块容器先清空
         replayMdata.areaList.Clear();
+        previewSelectedKeys.Clear();
+        replaySelectedKeys.Clear();
         camerasetMdata.areaList.Clear();
         doorsetMdata.areaList.Clear();
         cameraeventMdata.areaList.Clear();
@@ -401,12 +417,8 @@ public class UserManagerUi : Window
         if (!string.IsNullOrEmpty(MainUserManager.UsernameInput.text))
         {
             //新规则
-            role.roleName = MainUserManager.UsernameInput.text;
-            //rolesList中已经存在该角色名说明是修改角色，不是新建
-            if (rolesList != null && rolesList.data != null && rolesList.data.Exists(t => t.name == role.roleName))
-            {
-                role.roleId = rolesList.data.Find(t => t.name == role.roleName).id;
-            }
+            role.roleName = MainUserManager.UsernameInput.text.Trim();
+            role.roleId = RoleId > 0 ? RoleId : 0;
 
         
             //Debug.LogError("预览Item.Count:" + MarkCameraPreviewOutlineInfoList.Count);
@@ -421,14 +433,33 @@ public class UserManagerUi : Window
                 }
             }
 
-            replayMdata.areaList.Clear();
-            //replayMdata.areaList = ProductCameraTreeGroup(allCameraReplayTreeViewItemList);
-            previewMdata.areaList.Clear();
-            //previewMdata.areaList = ProductCameraTreeGroup(allCameraPreviewTreeViewItemList);
-            previewMdata.areaList = ProductCameraTreeByOutline(MarkCameraPreviewOutlineInfoList);
-            if (!roles.roleList.Exists(t => t.roleName == MainUserManager.UsernameInput.text))
-                roles.roleList.Add(role);
-            string SetStr = JsonConvert.SerializeObject(roles);
+            if (role.menuList.Exists(t => t.menuId == replayMdata.menuId))
+            {
+                if (replayAreaRoots.Count > 0)
+                {
+                    replayMdata.areaList = BuildSelectedAreaList(replayAreaRoots, replaySelectedKeys);
+                }
+            }
+            if (role.menuList.Exists(t => t.menuId == previewMdata.menuId))
+            {
+                if (previewAreaRoots.Count > 0)
+                {
+                    previewMdata.areaList = BuildSelectedAreaList(previewAreaRoots, previewSelectedKeys);
+                }
+            }
+
+            Role payloadRole = new Role();
+            payloadRole.roleId = role.roleId;
+            payloadRole.roleName = role.roleName;
+            payloadRole.menuList = role.menuList
+                .Where(menu => menu != null)
+                .GroupBy(menu => menu.menuId)
+                .Select(group => group.First())
+                .ToList();
+            Roles payload = new Roles();
+            payload.roleList.Add(payloadRole);
+            pendingSavedRoleId = payloadRole.roleId;
+            string SetStr = JsonConvert.SerializeObject(payload);
             Log.Debug("保存角色信息权限：" + SetStr);
             //上传服务器
             HttpNetManager.GetInstance().SendDataStr("http://" + GameStart.IP + "/api/perm/tg/role/module", AddAuthCallback, true, true, false, SetStr);
@@ -447,13 +478,25 @@ public class UserManagerUi : Window
     /// <param name="args"></param>
     void AddAuthCallback(HttpCallBackArgs args)
     {
-        if (!string.IsNullOrEmpty(args.Value))
+        if (args == null || args.HasError || string.IsNullOrEmpty(args.Value))
+        {
+            GameStart.Instance.ShowTip("角色权限保存失败，请检查服务器连接");
+            MainUserManager.addRolebtn.interactable = true;
+            pendingSavedRoleId = -1;
+            return;
+        }
+
+        try
         {
             HttpResponse response = JsonUtility.FromJson<HttpResponse>(args.Value);
-            if (response.code == 200)
+            if (response != null && response.code == 200)
             {
                 Log.Debug(args.Value);
                 GameStart.Instance.ShowTip(response.msg);
+                if (pendingSavedRoleId == LoginManager.RoleId && LoginManager.Ins != null)
+                {
+                    LoginManager.Ins.RefreshCurrentPermissions();
+                }
                 //添加角色信息成功，重新刷一下
                 for (int i = 0; i < MainUserManager.roleContent.childCount; i++)
                 {
@@ -464,9 +507,15 @@ public class UserManagerUi : Window
             }
             else
             {
-                GameStart.Instance.ShowTip(response.msg);
+                GameStart.Instance.ShowTip(response == null ? "服务器返回了无效的保存结果" : response.msg);
             }
         }
+        catch (Exception exception)
+        {
+            Log.Error("角色权限保存结果解析失败: " + exception.Message);
+            GameStart.Instance.ShowTip("角色权限保存结果格式错误");
+        }
+        pendingSavedRoleId = -1;
         MainUserManager.addRolebtn.interactable = true;
     }
 
@@ -482,6 +531,12 @@ public class UserManagerUi : Window
 
 
         MainUserManager.addRolebtn.interactable = false;
+        RoleId = -1;
+        RoleName = string.Empty;
+        role = new Role();
+        roles = new Roles();
+        previewSelectedKeys.Clear();
+        replaySelectedKeys.Clear();
         MainUserManager.UsernameInput.text = "新建角色";
         MainUserManager.UsernameInput.interactable = true;
 
@@ -600,10 +655,14 @@ public class UserManagerUi : Window
                             MainUserManager.UsernameInput.text = rolesList.data[index].name;
                             RoleName = rolesList.data[index].name;
                             RoleId = rolesList.data[index].id;
+                            role = new Role();
+                            role.roleName = RoleName;
+                            role.roleId = RoleId;
                             refrushtog(false);//刷一下都置为false
                             //监控预览清空
                             previewMdata.areaList.Clear();//模块容器需要清空 
                             MarkCameraPreviewOutlineInfoList.Clear();//判断已经存在的区域设备打勾的outline容器
+                            previewSelectedKeys.Clear();
 
 
                             if (MonitorPreviewList != null)
@@ -612,6 +671,7 @@ public class UserManagerUi : Window
                             //监控回放清空
                             replayMdata.areaList.Clear();//模块容器需要清空 
                             MarkCameraReplayOutlineInfoList.Clear();//切换角色时要清楚当前角色下选择 了但是没有保存的节点
+                            replaySelectedKeys.Clear();
 
                             if (MonitorReplayList != null)
                                 MonitorReplayList.Clear();//该角色下监控选中区域设备模块置空
@@ -652,6 +712,33 @@ public class UserManagerUi : Window
     /// <param name="args"></param>
     void GetRoleAuthCallback(HttpCallBackArgs args)
     {
+        if (args == null || args.HasError || string.IsNullOrEmpty(args.Value))
+        {
+            GameStart.Instance.ShowTip("角色权限加载失败");
+            return;
+        }
+
+        try
+        {
+            Roles authList = ExtractRoles(args.Value);
+            Role selectedRole = FindRole(authList, RoleId);
+            if (selectedRole == null)
+            {
+                GameStart.Instance.ShowTip("服务器未返回所选角色的权限数据");
+                return;
+            }
+
+            ApplyRolePermissionsToEditor(selectedRole);
+        }
+        catch (Exception exception)
+        {
+            Log.Error("角色权限加载失败: " + exception.Message);
+            GameStart.Instance.ShowTip("角色权限数据解析失败");
+        }
+    }
+
+    void GetRoleAuthCallbackLegacy(HttpCallBackArgs args)
+    {
         MonitorPreviewList = new List<GetAreaGroupDevs>();
         MonitorReplayList = new List<GetAreaGroupDevs>();
 
@@ -659,14 +746,14 @@ public class UserManagerUi : Window
         Log.Debug("获取权限；" + args.Value);
         if (!string.IsNullOrEmpty(args.Value))
         {
-            Roles authList = JsonConvert.DeserializeObject<Roles>(args.Value);
-            if (authList != null && authList.roleList != null && authList.roleList.Count > 0 &&
-                authList.roleList[0].menuList != null && authList.roleList[0].menuList.Count != 0)
+            Roles authList = ExtractRoles(args.Value);
+            Role selectedRole = FindRole(authList, RoleId);
+            if (selectedRole != null && selectedRole.menuList != null && selectedRole.menuList.Count != 0)
             {
-                foreach (var item in authList.roleList[0].menuList)
+                foreach (var item in selectedRole.menuList)
                 {
 
-                    switch (item.menuName)
+                    switch (GetMenuKey(item))
                     {
                         case "monitor_config":
                             MainUserManager.cmonitorSet.isOn = true;
@@ -766,9 +853,13 @@ public class UserManagerUi : Window
     /// <param name="ison"></param>
     void ppreviewtoglistener(bool ison)
     {
+        if (isApplyingRolePermissions)
+        {
+            return;
+        }
         if (ison)
         {
-
+            activePermissionTreeMenuId = previewMdata.menuId;
             //请求预览模块区域分组关系
             requestCameraGroupDev();
 
@@ -802,19 +893,23 @@ public class UserManagerUi : Window
     {
         PreviewoutlineInfoList.Clear();
         areaDevsData = null;
-        Log.Debug("角色管理界面服务器接收到的监控区域分组设备信息：" + args.Value);
-        if (!string.IsNullOrEmpty(args.Value))
-            areaDevsData = JsonUtility.FromJson<AreaDevsData>(args.Value);
-        //展示区域设备层级目录前先清空层级目录
-        DeleteRoleTreeItem();
-        for (int i = 0; i < areaDevsData.records.Count; i++)
+        if (args == null || args.HasError || string.IsNullOrEmpty(args.Value))
         {
-            int index = i;
-            SplitCameraPreviewTreeView(areaDevsData.records[index]);
+            GameStart.Instance.ShowTip("监控区域树加载失败");
+            return;
         }
-
-        //生成监控预览模块下的树级分组结构
-        InitRoleCameraPreviewGroup(PreviewoutlineInfoList, false);
+        Log.Debug("角色管理界面服务器接收到的监控区域分组设备信息：" + args.Value);
+        areaDevsData = JsonUtility.FromJson<AreaDevsData>(args.Value);
+        if (areaDevsData == null || areaDevsData.records == null)
+        {
+            GameStart.Instance.ShowTip("监控区域树数据格式错误");
+            return;
+        }
+        previewAreaRoots = areaDevsData.records;
+        if (activePermissionTreeMenuId == previewMdata.menuId)
+        {
+            InitRoleCameraPreviewGroup(PreviewoutlineInfoList, false);
+        }
 
     }
 
@@ -823,19 +918,23 @@ public class UserManagerUi : Window
     {
         PreviewoutlineInfoList.Clear();
         areaCameras = null;
-        Log.Debug("角色管理界面服务器接收到的监控区域分组设备信息：" + args.Value);
-        if (!string.IsNullOrEmpty(args.Value))
-            areaCameras = JsonUtility.FromJson<AreaDevsData>(args.Value);
-        //展示区域设备层级目录前先清空层级目录
-        DeleteRoleTreeItem();
-        for (int i = 0; i < areaCameras.records.Count; i++)
+        if (args == null || args.HasError || string.IsNullOrEmpty(args.Value))
         {
-            int index = i;
-            SplitCameraPreviewTreeView(areaCameras.records[index]);
+            GameStart.Instance.ShowTip("监控区域树加载失败");
+            return;
         }
-
-        //生成监控预览模块下的树级分组结构
-        InitRoleCameraPreviewGroup(PreviewoutlineInfoList, true,true);
+        Log.Debug("角色管理界面服务器接收到的监控区域分组设备信息：" + args.Value);
+        areaCameras = JsonUtility.FromJson<AreaDevsData>(args.Value);
+        if (areaCameras == null || areaCameras.records == null)
+        {
+            GameStart.Instance.ShowTip("监控区域树数据格式错误");
+            return;
+        }
+        previewAreaRoots = areaCameras.records;
+        if (activePermissionTreeMenuId == previewMdata.menuId)
+        {
+            InitRoleCameraPreviewGroup(PreviewoutlineInfoList, true, true);
+        }
 
     }
 
@@ -850,7 +949,20 @@ public class UserManagerUi : Window
     List<TreeViewItem> EquipCameraPreviewTreeViewItemList = new List<TreeViewItem>();
     static TreeViewItem itemPreviewPar = new TreeViewItem();
     static TreeViewItem itemPreviewGr = new TreeViewItem();
-    public void InitRoleCameraPreviewGroup(List<OutlineInfo> outlineInfoList, bool IsallChoice=false,bool isonvalue=false)
+    public void InitRoleCameraPreviewGroup(List<OutlineInfo> outlineInfoList, bool IsallChoice = false, bool isonvalue = false)
+    {
+        if (IsallChoice)
+        {
+            previewSelectedKeys.Clear();
+            if (isonvalue)
+            {
+                AddAllPermissionKeys(previewAreaRoots, previewSelectedKeys);
+            }
+        }
+        RenderPermissionTree(previewAreaRoots, previewSelectedKeys, false);
+    }
+
+    public void InitRoleCameraPreviewGroupLegacy(List<OutlineInfo> outlineInfoList, bool IsallChoice=false,bool isonvalue=false)
     {
         if (previewMdata.areaList != null)
             previewMdata.areaList.Clear();
@@ -1122,10 +1234,14 @@ public class UserManagerUi : Window
 
     void cpreviewlistener(bool ison)
     {
+        if (isApplyingRolePermissions)
+        {
+            return;
+        }
         if (ison)
         {
-            //MainUserManager.ppreviewtog.onValueChanged.Invoke(true);
-            requestCameraGroupDevAllChoice();
+            activePermissionTreeMenuId = previewMdata.menuId;
+            requestCameraGroupDev();
 
             if (!role.menuList.Contains(previewMdata))
                 role.menuList.Add(previewMdata);//添加视频预览模块
@@ -1136,13 +1252,6 @@ public class UserManagerUi : Window
         {
 
             DeleteRoleTreeItem();
-            //for (int i = 0; i < areaCameras.records.Count; i++)
-            //{
-            //    int index = i;
-            //    SplitCameraPreviewTreeView(areaCameras.records[index]);
-            //}
-            //生成监控预览模块下的树级分组结构
-            InitRoleCameraPreviewGroup(PreviewoutlineInfoList, true);
 
             if (role.menuList.Contains(previewMdata))
                 role.menuList.Remove(previewMdata);//删除视频预览模块
@@ -1159,8 +1268,13 @@ public class UserManagerUi : Window
     /// <param name="ison"></param>
     void preplaytoglistener(bool ison)
     {
+        if (isApplyingRolePermissions)
+        {
+            return;
+        }
         if (ison)
         {
+            activePermissionTreeMenuId = replayMdata.menuId;
             requestCameraReplayGroupDev();
 
         }
@@ -1183,20 +1297,24 @@ public class UserManagerUi : Window
     {
         ReplayoutlineInfoList.Clear();
         areaDevsData = null;
-        Log.Debug("角色管理界面服务器接收到的监控区域分组设备信息：" + args.Value);
-        if (!string.IsNullOrEmpty(args.Value))
-            areaDevsData = JsonUtility.FromJson<AreaDevsData>(args.Value);
-
-        DeleteRoleTreeItem();
-        for (int i = 0; i < areaDevsData.records.Count; i++)
+        if (args == null || args.HasError || string.IsNullOrEmpty(args.Value))
         {
-            int index = i;
-
-            SplitCameraReplayTreeView(areaDevsData.records[index]);
+            GameStart.Instance.ShowTip("录像回放区域树加载失败");
+            return;
         }
+        Log.Debug("角色管理界面服务器接收到的监控区域分组设备信息：" + args.Value);
+        areaDevsData = JsonUtility.FromJson<AreaDevsData>(args.Value);
+        if (areaDevsData == null || areaDevsData.records == null)
+        {
+            GameStart.Instance.ShowTip("录像回放区域树数据格式错误");
+            return;
+        }
+        replayAreaRoots = areaDevsData.records;
 
-        //生成监控回放模块下的树级分组结构
-        InitRoleCameraReplayGroup(ReplayoutlineInfoList);
+        if (activePermissionTreeMenuId == replayMdata.menuId)
+        {
+            InitRoleCameraReplayGroup(ReplayoutlineInfoList);
+        }
 
     }
 
@@ -1209,6 +1327,11 @@ public class UserManagerUi : Window
     TreeViewItem itemReplayPar = new TreeViewItem();
     TreeViewItem itemReplayGr = new TreeViewItem();
     public void InitRoleCameraReplayGroup(List<OutlineInfo> outlineInfoList)
+    {
+        RenderPermissionTree(replayAreaRoots, replaySelectedKeys, true);
+    }
+
+    public void InitRoleCameraReplayGroupLegacy(List<OutlineInfo> outlineInfoList)
     {
         if (replayMdata.areaList != null)
             replayMdata.areaList.Clear();
@@ -1471,15 +1594,21 @@ public class UserManagerUi : Window
 
     void creplaylistener(bool ison)
     {
+        if (isApplyingRolePermissions)
+        {
+            return;
+        }
         if (ison)
         {
-            MainUserManager.preplaytog.onValueChanged.Invoke(true);
+            activePermissionTreeMenuId = replayMdata.menuId;
+            requestCameraReplayGroupDev();
 
             if (!role.menuList.Contains(replayMdata))
                 role.menuList.Add(replayMdata);//添加回放模块
         }
         else
         {
+            DeleteRoleTreeItem();
             if (role.menuList.Contains(replayMdata))
                 role.menuList.Remove(replayMdata);//删除回放模块
 
@@ -1756,7 +1885,7 @@ public class UserManagerUi : Window
     /// </summary>
     private void DeleteRoleTreeItem()
     {
-
+        activePermissionTreeMenuId = 0;
         for (int i = MainUserManager.TreeviewRoleManager.transform.childCount - 1; i >= 0; i--)
         {
             int temp = i;
@@ -1941,6 +2070,321 @@ public class UserManagerUi : Window
             }
         }
 
+    }
+
+    private static string AreaPermissionKey(int areaId)
+    {
+        return "area:" + areaId;
+    }
+
+    private static string DevicePermissionKey(int areaId, int deviceId)
+    {
+        return "device:" + areaId + ":" + deviceId;
+    }
+
+    private void RenderPermissionTree(List<GetAreaGroupDevs> roots, HashSet<string> selectedKeys, bool isReplay)
+    {
+        DeleteRoleTreeItem();
+        permissionTreeItems.Clear();
+        permissionTreeParents.Clear();
+        permissionTreeChildren.Clear();
+        permissionTreeIsReplay = isReplay;
+        allCameraPreviewTreeViewItemList.Clear();
+        EquipCameraPreviewTreeViewItemList.Clear();
+        allCameraReplayTreeViewItemList.Clear();
+        equipCameraReplayTreeViewItemList.Clear();
+
+        if (roots == null)
+        {
+            return;
+        }
+
+        suppressPermissionTreeEvents = true;
+        try
+        {
+            for (int i = 0; i < roots.Count; i++)
+            {
+                AppendPermissionArea(roots[i], MainUserManager.TreeviewRoleManager, string.Empty, selectedKeys, isReplay);
+            }
+        }
+        finally
+        {
+            suppressPermissionTreeEvents = false;
+        }
+    }
+
+    private void AppendPermissionArea(GetAreaGroupDevs area, TreeList targetTree, string parentKey,
+        HashSet<string> selectedKeys, bool isReplay)
+    {
+        if (area == null)
+        {
+            return;
+        }
+
+        string areaKey = AreaPermissionKey(area.id);
+        if (permissionTreeItems.ContainsKey(areaKey))
+        {
+            Log.Error("权限树存在重复区域ID，已跳过: " + area.id);
+            return;
+        }
+        TreeViewItem areaItem = targetTree.AppendItem("ItemPrefab1");
+        ItemScript areaScript = areaItem.GetComponent<ItemScript>();
+        areaScript.id = area.id.ToString();
+        areaScript.parentId = area.parentId.ToString();
+        areaScript.level = area.level;
+        areaScript.type = area.areaType;
+        areaScript.labelText.text = area.areaName;
+        areaScript.children = area.children;
+        areaScript.devList = area.devList;
+        areaScript.SetItem(areaScript);
+        RegisterPermissionTreeItem(areaKey, parentKey, areaItem, selectedKeys, isReplay, false);
+
+        if (isReplay)
+        {
+            allCameraReplayTreeViewItemList.Add(areaItem);
+        }
+        else
+        {
+            allCameraPreviewTreeViewItemList.Add(areaItem);
+        }
+
+        if (area.children != null)
+        {
+            for (int i = 0; i < area.children.Count; i++)
+            {
+                AppendPermissionArea(area.children[i], areaItem.ChildTree, areaKey, selectedKeys, isReplay);
+            }
+        }
+
+        if (area.devList == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < area.devList.Count; i++)
+        {
+            NVRInformation device = area.devList[i];
+
+            string deviceKey = DevicePermissionKey(area.id, device.id);
+            if (permissionTreeItems.ContainsKey(deviceKey))
+            {
+                continue;
+            }
+            TreeViewItem deviceItem = areaItem.ChildTree.AppendItem("ItemPrefab1");
+            ItemScript deviceScript = deviceItem.GetComponent<ItemScript>();
+            deviceScript.id = device.id.ToString();
+            deviceScript.parentId = area.id.ToString();
+            deviceScript.level = "equip";
+            deviceScript.labelText.text = device.cameraname;
+            deviceScript.nvr = device;
+            deviceScript.SetItem(deviceScript);
+            if (permissionCameraIcon == null)
+            {
+                permissionCameraIcon = Resources.Load<Sprite>("UI/录像回放/摄像头-0");
+            }
+            deviceScript.icon.sprite = permissionCameraIcon;
+            deviceScript.labelText.interactable = false;
+            RegisterPermissionTreeItem(deviceKey, areaKey, deviceItem, selectedKeys, isReplay, true);
+
+            if (isReplay)
+            {
+                equipCameraReplayTreeViewItemList.Add(deviceItem);
+            }
+            else
+            {
+                EquipCameraPreviewTreeViewItemList.Add(deviceItem);
+            }
+        }
+    }
+
+    private void RegisterPermissionTreeItem(string key, string parentKey, TreeViewItem treeItem,
+        HashSet<string> selectedKeys, bool isReplay, bool isDevice)
+    {
+        permissionTreeItems[key] = treeItem;
+        if (!string.IsNullOrEmpty(parentKey))
+        {
+            permissionTreeParents[key] = parentKey;
+            List<string> children;
+            if (!permissionTreeChildren.TryGetValue(parentKey, out children))
+            {
+                children = new List<string>();
+                permissionTreeChildren[parentKey] = children;
+            }
+            children.Add(key);
+        }
+
+        ItemScript itemScript = treeItem.GetComponent<ItemScript>();
+        itemScript.choiceTog.onValueChanged.RemoveAllListeners();
+        itemScript.choiceTog.isOn = selectedKeys.Contains(key);
+        itemScript.choiceTog.onValueChanged.AddListener(isOn =>
+        {
+            HandlePermissionTreeToggle(key, isOn, isReplay);
+        });
+    }
+
+    private void HandlePermissionTreeToggle(string key, bool isOn, bool isReplay)
+    {
+        if (suppressPermissionTreeEvents || permissionTreeIsReplay != isReplay)
+        {
+            return;
+        }
+
+        HashSet<string> selectedKeys = isReplay ? replaySelectedKeys : previewSelectedKeys;
+        SetPermissionSelection(key, isOn, selectedKeys);
+
+        List<string> descendants;
+        if (!permissionTreeChildren.TryGetValue(key, out descendants))
+        {
+            descendants = new List<string>();
+        }
+        for (int i = 0; i < descendants.Count; i++)
+        {
+            SetPermissionSubtree(descendants[i], isOn, selectedKeys);
+        }
+
+        UpdatePermissionAncestors(key, selectedKeys);
+    }
+
+    private void SetPermissionSubtree(string key, bool isOn, HashSet<string> selectedKeys)
+    {
+        SetPermissionSelection(key, isOn, selectedKeys);
+        List<string> children;
+        if (!permissionTreeChildren.TryGetValue(key, out children))
+        {
+            return;
+        }
+        for (int i = 0; i < children.Count; i++)
+        {
+            SetPermissionSubtree(children[i], isOn, selectedKeys);
+        }
+    }
+
+    private void SetPermissionSelection(string key, bool isOn, HashSet<string> selectedKeys)
+    {
+        if (isOn)
+        {
+            selectedKeys.Add(key);
+        }
+        else
+        {
+            selectedKeys.Remove(key);
+        }
+
+        TreeViewItem treeItem;
+        if (permissionTreeItems.TryGetValue(key, out treeItem) && treeItem != null)
+        {
+            suppressPermissionTreeEvents = true;
+            try
+            {
+                treeItem.GetComponent<ItemScript>().choiceTog.isOn = isOn;
+            }
+            finally
+            {
+                suppressPermissionTreeEvents = false;
+            }
+        }
+    }
+
+    private void UpdatePermissionAncestors(string key, HashSet<string> selectedKeys)
+    {
+        string parentKey;
+        while (permissionTreeParents.TryGetValue(key, out parentKey))
+        {
+            List<string> children;
+            bool hasSelectedChild = permissionTreeChildren.TryGetValue(parentKey, out children) &&
+                children.Any(selectedKeys.Contains);
+            SetPermissionSelection(parentKey, hasSelectedChild, selectedKeys);
+            key = parentKey;
+        }
+    }
+
+    private static void AddAllPermissionKeys(List<GetAreaGroupDevs> areas, HashSet<string> selectedKeys)
+    {
+        if (areas == null)
+        {
+            return;
+        }
+        for (int i = 0; i < areas.Count; i++)
+        {
+            GetAreaGroupDevs area = areas[i];
+            if (area == null)
+            {
+                continue;
+            }
+            selectedKeys.Add(AreaPermissionKey(area.id));
+            if (area.devList != null)
+            {
+                for (int j = 0; j < area.devList.Count; j++)
+                {
+                    selectedKeys.Add(DevicePermissionKey(area.id, area.devList[j].id));
+                }
+            }
+            AddAllPermissionKeys(area.children, selectedKeys);
+        }
+    }
+
+    private static void LoadPermissionKeys(List<GetAreaGroupDevs> areas, HashSet<string> selectedKeys)
+    {
+        selectedKeys.Clear();
+        AddAllPermissionKeys(areas, selectedKeys);
+    }
+
+    private static List<GetAreaGroupDevs> BuildSelectedAreaList(List<GetAreaGroupDevs> sourceAreas,
+        HashSet<string> selectedKeys)
+    {
+        List<GetAreaGroupDevs> result = new List<GetAreaGroupDevs>();
+        if (sourceAreas == null)
+        {
+            return result;
+        }
+
+        for (int i = 0; i < sourceAreas.Count; i++)
+        {
+            GetAreaGroupDevs selectedArea = BuildSelectedArea(sourceAreas[i], selectedKeys);
+            if (selectedArea != null)
+            {
+                result.Add(selectedArea);
+            }
+        }
+        return result;
+    }
+
+    private static GetAreaGroupDevs BuildSelectedArea(GetAreaGroupDevs source, HashSet<string> selectedKeys)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        List<GetAreaGroupDevs> selectedChildren = BuildSelectedAreaList(source.children, selectedKeys);
+        List<NVRInformation> selectedDevices = new List<NVRInformation>();
+        if (source.devList != null)
+        {
+            for (int i = 0; i < source.devList.Count; i++)
+            {
+                NVRInformation device = source.devList[i];
+                if (selectedKeys.Contains(DevicePermissionKey(source.id, device.id)))
+                {
+                    selectedDevices.Add(device);
+                }
+            }
+        }
+
+        if (!selectedKeys.Contains(AreaPermissionKey(source.id)) && selectedChildren.Count == 0 && selectedDevices.Count == 0)
+        {
+            return null;
+        }
+
+        GetAreaGroupDevs result = new GetAreaGroupDevs();
+        result.id = source.id;
+        result.areaName = source.areaName;
+        result.remark = source.remark;
+        result.areaType = source.areaType;
+        result.parentId = source.parentId;
+        result.level = source.level;
+        result.devList = selectedDevices;
+        result.children = selectedChildren;
+        return result;
     }
 
     //把TreeViewItem集合拼成树级结构  List<GetAreaGroupDevs>
@@ -2415,11 +2859,17 @@ public class UserManagerUi : Window
         if (!string.IsNullOrEmpty(args.Value))
         {
             //roleListData authList = JsonConvert.DeserializeObject<roleListData>(args.Value);
-            Roles authList = JsonConvert.DeserializeObject<Roles>(args.Value);
-            foreach (var item in authList.roleList[0].menuList)
+            Roles authList = ExtractRoles(args.Value);
+            Role selectedRole = FindRole(authList, ChoiceRole);
+            if (selectedRole == null || selectedRole.menuList == null)
+            {
+                GameStart.Instance.ShowTip("服务器未返回所选角色的权限数据");
+                return;
+            }
+            foreach (var item in selectedRole.menuList)
             {
                 Log.Debug("模块名称:" + item.menuName);
-                switch (item.menuName)
+                switch (GetMenuKey(item))
                 {
                     case "monitor_config":
                         MainUserManager.usercmonitorSettog.isOn = true;
@@ -2589,6 +3039,166 @@ public class UserManagerUi : Window
             }
         }
 
+    }
+
+    private void ApplyRolePermissionsToEditor(Role selectedRole)
+    {
+        List<Menu> sourceMenus = selectedRole.menuList ?? new List<Menu>();
+        Menu previewSource = sourceMenus.Find(menu => GetMenuKey(menu) == "monitor_preview");
+        Menu replaySource = sourceMenus.Find(menu => GetMenuKey(menu) == "monitor_playback");
+
+        previewMdata.areaList = previewSource != null && previewSource.areaList != null
+            ? previewSource.areaList
+            : new List<GetAreaGroupDevs>();
+        replayMdata.areaList = replaySource != null && replaySource.areaList != null
+            ? replaySource.areaList
+            : new List<GetAreaGroupDevs>();
+        LoadPermissionKeys(previewMdata.areaList, previewSelectedKeys);
+        LoadPermissionKeys(replayMdata.areaList, replaySelectedKeys);
+
+        isApplyingRolePermissions = true;
+        try
+        {
+            refrushtog(false);
+            for (int i = 0; i < sourceMenus.Count; i++)
+            {
+                switch (GetMenuKey(sourceMenus[i]))
+                {
+                    case "monitor_config": MainUserManager.cmonitorSet.isOn = true; break;
+                    case "door_config": MainUserManager.cdoorSet.isOn = true; break;
+                    case "monitor_preview": MainUserManager.cpreview.isOn = true; break;
+                    case "monitor_playback": MainUserManager.creplay.isOn = true; break;
+                    case "monitor_event": MainUserManager.ccameraevent.isOn = true; break;
+                    case "door_event": MainUserManager.cdoorevent.isOn = true; break;
+                    case "user_management": MainUserManager.cusermanager.isOn = true; break;
+                    case "personnel_management": MainUserManager.cpeoplemanager.isOn = true; break;
+                }
+            }
+        }
+        finally
+        {
+            isApplyingRolePermissions = false;
+        }
+
+        role.menuList.Clear();
+        AddCanonicalMenuIfPresent(sourceMenus, camerasetMdata);
+        AddCanonicalMenuIfPresent(sourceMenus, doorsetMdata);
+        AddCanonicalMenuIfPresent(sourceMenus, previewMdata);
+        AddCanonicalMenuIfPresent(sourceMenus, replayMdata);
+        AddCanonicalMenuIfPresent(sourceMenus, cameraeventMdata);
+        AddCanonicalMenuIfPresent(sourceMenus, dooreventMdata);
+        AddCanonicalMenuIfPresent(sourceMenus, peopleManagerMdata);
+        AddCanonicalMenuIfPresent(sourceMenus, UserManagerMdata);
+        DeleteRoleTreeItem();
+    }
+
+    private void AddCanonicalMenuIfPresent(List<Menu> sourceMenus, Menu canonicalMenu)
+    {
+        Menu source = sourceMenus.Find(menu => menu != null && menu.menuId == canonicalMenu.menuId);
+        if (source == null)
+        {
+            source = sourceMenus.Find(menu => GetMenuKey(menu) == canonicalMenu.menuName);
+        }
+        if (source == null)
+        {
+            return;
+        }
+        if (source.areaList != null)
+        {
+            canonicalMenu.areaList = source.areaList;
+        }
+        role.menuList.Add(canonicalMenu);
+    }
+
+    private static Role FindRole(Roles authList, long roleId)
+    {
+        if (authList == null || authList.roleList == null || authList.roleList.Count == 0)
+        {
+            return null;
+        }
+
+        Role selected = authList.roleList.Find(item => item != null && item.roleId == roleId);
+        return selected ?? authList.roleList[0];
+    }
+
+    private static Roles ExtractRoles(string json)
+    {
+        JObject root = JToken.Parse(json) as JObject;
+        if (root == null)
+        {
+            return null;
+        }
+
+        JToken roleListToken = root["roleList"] ?? root.SelectToken("data.roleList");
+        if (roleListToken != null && roleListToken.Type == JTokenType.Array)
+        {
+            Roles result = new Roles();
+            result.roleList = roleListToken.ToObject<List<Role>>() ?? new List<Role>();
+            return result;
+        }
+
+        JToken roleToken = null;
+        JObject dataObject = root["data"] as JObject;
+        if (dataObject != null && (dataObject["menuList"] != null || dataObject["menus"] != null))
+        {
+            roleToken = dataObject;
+        }
+        else if (root["menuList"] != null || root["menus"] != null)
+        {
+            roleToken = root;
+        }
+
+        if (roleToken == null)
+        {
+            return null;
+        }
+
+        Role roleItem = roleToken.ToObject<Role>();
+        if (roleItem != null && roleItem.menuList == null && roleToken["menus"] != null)
+        {
+            roleItem.menuList = roleToken["menus"].ToObject<List<Menu>>() ?? new List<Menu>();
+        }
+        Roles singleRoleResult = new Roles();
+        if (roleItem != null)
+        {
+            singleRoleResult.roleList.Add(roleItem);
+        }
+        return singleRoleResult;
+    }
+
+    private static string GetMenuKey(Menu item)
+    {
+        if (item == null)
+        {
+            return string.Empty;
+        }
+
+        switch (item.menuId)
+        {
+            case 12: return "monitor_config";
+            case 13: return "door_config";
+            case 14: return "monitor_preview";
+            case 15: return "monitor_playback";
+            case 16: return "monitor_event";
+            case 17: return "door_event";
+            case 18: return "personnel_management";
+            case 19: return "user_management";
+        }
+
+        string normalized = (item.menuName ?? string.Empty).Trim().ToLowerInvariant()
+            .Replace("_", string.Empty).Replace("-", string.Empty).Replace(" ", string.Empty);
+        switch (normalized)
+        {
+            case "monitorconfig": return "monitor_config";
+            case "doorconfig": return "door_config";
+            case "monitorpreview": return "monitor_preview";
+            case "monitorplayback": return "monitor_playback";
+            case "monitorevent": return "monitor_event";
+            case "doorevent": return "door_event";
+            case "personnelmanagement": return "personnel_management";
+            case "usermanagement": return "user_management";
+            default: return item.menuName ?? string.Empty;
+        }
     }
 
     /// <summary>

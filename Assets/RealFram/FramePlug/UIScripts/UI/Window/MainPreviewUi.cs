@@ -47,6 +47,27 @@ public class MainPreviewUi : Window
     {
         return !string.IsNullOrEmpty(host) && host != "1.1.1.1:1";
     }
+
+    private static void ConfigurePreviewTreeLabel(ItemScript item, string label)
+    {
+        if (item == null || item.labelText == null)
+        {
+            return;
+        }
+
+        item.labelText.text = label ?? string.Empty;
+        item.labelText.interactable = false;
+        if (item.labelText.targetGraphic != null)
+        {
+            item.labelText.targetGraphic.raycastTarget = false;
+        }
+        if (item.labelText.textComponent != null)
+        {
+            item.labelText.textComponent.resizeTextForBestFit = false;
+            item.labelText.textComponent.fontSize = 14;
+            item.labelText.textComponent.raycastTarget = false;
+        }
+    }
     public override void Awake(params object[] paralist)
     {
 
@@ -814,7 +835,7 @@ public class MainPreviewUi : Window
                         TreeViewItem childItem = _mainPanel.MainPreviewTreeView.AppendItem("ItemPrefab1");
                         childItem.GetComponent<ItemScript>().id = SearchoutlineInfoList[i].OutlineId;
                         childItem.GetComponent<ItemScript>().parentId = SearchoutlineInfoList[i].ParentId;
-                        childItem.GetComponent<ItemScript>().labelText.text = SearchoutlineInfoList[i].OutlineName;
+                        ConfigurePreviewTreeLabel(childItem.GetComponent<ItemScript>(), SearchoutlineInfoList[i].OutlineName);
                         childItem.GetComponent<ItemScript>().SetItem(childItem.GetComponent<ItemScript>());
                         childItem.GetComponent<ItemScript>().type = SearchoutlineInfoList[i].Type;
                         childItem.GetComponent<ItemScript>().children = SearchoutlineInfoList[i].Children;
@@ -875,7 +896,7 @@ public class MainPreviewUi : Window
                     item1 = _mainPanel.MainPreviewTreeView.AppendItem("ItemPrefab1");
                     item1.GetComponent<ItemScript>().id = outlineInfoList[temp].OutlineId;
                     item1.GetComponent<ItemScript>().parentId = outlineInfoList[temp].ParentId;
-                    item1.GetComponent<ItemScript>().labelText.text = outlineInfoList[temp].OutlineName;
+                    ConfigurePreviewTreeLabel(item1.GetComponent<ItemScript>(), outlineInfoList[temp].OutlineName);
                     item1.GetComponent<ItemScript>().type = outlineInfoList[temp].Type;
                     item1.GetComponent<ItemScript>().SetItem(item1.GetComponent<ItemScript>());
                     allCameraTreeViewItemList.Add(item1);
@@ -896,7 +917,7 @@ public class MainPreviewUi : Window
                             TreeViewItem childItem = allCameraTreeViewItemList[j].ChildTree.AppendItem("ItemPrefab1");
                             childItem.GetComponent<ItemScript>().id = outlineInfoList[temp].OutlineId;
                             childItem.GetComponent<ItemScript>().parentId = outlineInfoList[temp].ParentId;
-                            childItem.GetComponent<ItemScript>().labelText.text = outlineInfoList[temp].OutlineName;
+                            ConfigurePreviewTreeLabel(childItem.GetComponent<ItemScript>(), outlineInfoList[temp].OutlineName);
                             childItem.GetComponent<ItemScript>().SetItem(childItem.GetComponent<ItemScript>());
                             childItem.GetComponent<ItemScript>().type = outlineInfoList[temp].Type;
                             childItem.GetComponent<ItemScript>().children = outlineInfoList[temp].Children;

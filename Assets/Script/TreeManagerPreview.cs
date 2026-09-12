@@ -28,19 +28,21 @@ namespace SuperTreeView
 
         private bool inputFieldType = false;
 
-        private static TreeManager instance;
-        public static TreeManager GetInstance()
+        private static TreeManagerPreview instance;
+        public static TreeManagerPreview GetInstance()
         {
             if (instance == null)
             {
-                instance = new TreeManager();
+                instance = FindObjectOfType<TreeManagerPreview>();
             }
             return instance;
         }
         bool init = false;
 
-
-
+        private void Awake()
+        {
+            instance = this;
+        }
 
         void Start()
         {

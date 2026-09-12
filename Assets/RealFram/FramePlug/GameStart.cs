@@ -76,9 +76,11 @@ public class GameStart : MonoSingleton<GameStart>
         LoadCameraData();
         InitUserGroupDic();
 
-        //注释掉Mqtt,人员更新完成之后开启
-        StartMqtt(AppRuntimeConfig.Settings.mqttUserName, AppRuntimeConfig.Settings.mqttPassword,
-            GameStart.MqttIP, AppRuntimeConfig.Settings.mqttPort);
+        if (!AppRuntimeConfig.Settings.enableOfflineMode)
+        {
+            StartMqtt(AppRuntimeConfig.Settings.mqttUserName, AppRuntimeConfig.Settings.mqttPassword,
+                GameStart.MqttIP, AppRuntimeConfig.Settings.mqttPort);
+        }
 
 
 
@@ -89,7 +91,10 @@ public class GameStart : MonoSingleton<GameStart>
         UIManager.Instance.PopUpWnd(ConStr.LOGINPAGE, true);//登录页
         //定时向服务器请求该用户是否超时
         //InvokeRepeating("LoginCheck", 10,600);
-        InitDataByServer();
+        if (!AppRuntimeConfig.Settings.enableOfflineMode)
+        {
+            InitDataByServer();
+        }
     }
 
     //初始化服务器请求下来的数据

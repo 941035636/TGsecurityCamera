@@ -243,8 +243,45 @@ namespace zFramework.Media
             {
                 // 项目中用到的 NVR 屈指可数，Linq 闭着眼睛用
                 var nvr = Instance.nvrs.SelectMany(v => v.Value)
-                                                           .FirstOrDefault(v => v.data.host ==nvrinfo. host);
-                await nvr?.LoginAsync(nvrinfo,needPlay);
+                                                          .FirstOrDefault(v => v.data.type == nvrinfo.type &&
+                                                              string.Equals(v.data.host, nvrinfo.host, StringComparison.OrdinalIgnoreCase));
+                if (nvr == null)
+                {
+                    List<NVR> nvrList;
+                    bool sdkNeedsInitialization = !Instance.nvrs.TryGetValue(nvrinfo.type, out nvrList);
+                    if (sdkNeedsInitialization)
+                    {
+                        nvrList = new List<NVR>();
+                        Instance.nvrs[nvrinfo.type] = nvrList;
+                    }
+
+                    nvr = CreateNVR(nvrinfo.type, nvrinfo);
+                    if (nvr == null)
+                    {
+                        Log.Error("未找到设备对应的播放器类型: " + nvrinfo.type + ", host: " + nvrinfo.host);
+                        GameStart.Instance.ShowTip("该监控设备类型暂不支持播放");
+                        return;
+                    }
+
+                    if (sdkNeedsInitialization)
+                    {
+                        nvr.InitSDK();
+                    }
+                    nvrList.Add(nvr);
+                    Log.Debug("已使用服务器返回的设备信息补充 NVR 配置: " + nvrinfo.host);
+                }
+                else
+                {
+                    // 使用服务端返回的最新账号、端口和设备类型，播放器实现保持不变。
+                    nvr.data = nvrinfo;
+                }
+
+                await nvr.LoginAsync(nvrinfo,needPlay);
+            }
+            else
+            {
+                Log.Error("无法播放监控：服务器返回的设备 host 为空");
+                GameStart.Instance.ShowTip("该监控设备地址为空，无法播放");
             }
         }
 

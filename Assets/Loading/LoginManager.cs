@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -44,6 +45,7 @@ public class LoginManager : SingletonManager<LoginManager>
 
     public List<GetAreaGroupDevs> PreviewAuthList ;
     public List<GetAreaGroupDevs> ReplayAuthList;
+    private bool completeLoginAfterPermissionLoad;
 
     [Serializable]
     public class LoginResData
@@ -69,10 +71,90 @@ public class LoginManager : SingletonManager<LoginManager>
     private void Start()
     {
         ResetPermissions();
-        inUserName.text = PlayerPrefs.GetString("userName");
         // Passwords must never be persisted in PlayerPrefs (plain text on disk).
         PlayerPrefs.DeleteKey("password");
+
+        if (AppRuntimeConfig.Settings.enableOfflineMode)
+        {
+            StartCoroutine(CompleteOfflineLogin());
+            return;
+        }
+
+        inUserName.text = PlayerPrefs.GetString("userName");
         inPassword.text = string.Empty;
+    }
+
+    private IEnumerator CompleteOfflineLogin()
+    {
+        // Wait until UIManager has finished opening the login window before replacing it.
+        yield return null;
+
+        RoleName = "offline-admin";
+        UserName = "offline-user";
+        UserId = "offline";
+        RoleId = -1;
+        HttpNetManager.ClearAuthorizationToken();
+        GrantOfflinePermissions();
+        PlayerPrefs.SetInt("IsLogin", 1);
+
+        Debug.LogWarning("Offline mode is enabled. Server authentication and remote permission checks are bypassed for local testing only.");
+        UIManager.Instance.CloseWnd(ConStr.LOGINPAGE);
+        UIManager.Instance.PopUpWnd(ConStr.FIRSTPAGE, true);
+    }
+
+    private void GrantOfflinePermissions()
+    {
+        ResetPermissions();
+        IsPreview = true;
+        IsReplay = true;
+        IsCameraEvent = true;
+        IsDoorEvent = true;
+        IsPeopleManager = true;
+        IsUserManager = true;
+        IsCameraSet = true;
+        IsDoorSet = true;
+
+        PopulateLocalCameraPermissionsIfNeeded();
+    }
+
+    private void PopulateLocalCameraPermissionsIfNeeded()
+    {
+        bool populatePreview = PreviewAuthList != null && PreviewAuthList.Count == 0;
+        bool populateReplay = ReplayAuthList != null && ReplayAuthList.Count == 0;
+        if (!populatePreview && !populateReplay)
+        {
+            return;
+        }
+
+        if (GameStart.Instance == null || GameStart.Instance.CameraGroupList == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < GameStart.Instance.CameraGroupList.Count; i++)
+        {
+            var source = GameStart.Instance.CameraGroupList[i];
+            if (source == null)
+            {
+                continue;
+            }
+
+            GetAreaGroupDevs group = new GetAreaGroupDevs();
+            group.id = source.id != 0 ? source.id : i + 1;
+            group.areaName = source.GroupName ?? string.Empty;
+            group.areaType = 2;
+            group.parentId = 0;
+            group.level = "1";
+            group.devList = source.CameraInfos ?? new List<zFramework.Media.NVRInformation>();
+            if (populatePreview)
+            {
+                PreviewAuthList.Add(group);
+            }
+            if (populateReplay)
+            {
+                ReplayAuthList.Add(group);
+            }
+        }
     }
 
     //登录回调
@@ -80,6 +162,9 @@ public class LoginManager : SingletonManager<LoginManager>
     {
         if (args == null || args.HasError || string.IsNullOrEmpty(args.Value))
         {
+            string error = args == null ? "回调为空" :
+                "HTTP " + args.ResponseCode + ", " + (args.ErrorValue ?? "未返回错误信息");
+            Log.Error("登录请求失败: " + GameStart.ApiUrl("/auth/login") + ", " + error);
             inTips.text = "服务器连接失败，请稍后重试";
             inTips.color = Color.red;
             return;
@@ -115,8 +200,9 @@ public class LoginManager : SingletonManager<LoginManager>
                 inTips.text = "";
             });
             ResetPermissions();
-            UIManager.Instance.CloseWnd(ConStr.LOGINPAGE);
-            UIManager.Instance.PopUpWnd(ConStr.FIRSTPAGE, true);
+            completeLoginAfterPermissionLoad = true;
+            inTips.text = "登录成功，正在加载权限...";
+            inTips.color = Color.green;
             GetuserAuthFromServer(RoleId);
         }
         else
@@ -137,6 +223,12 @@ public class LoginManager : SingletonManager<LoginManager>
 
     }
 
+    public void RefreshCurrentPermissions()
+    {
+        completeLoginAfterPermissionLoad = false;
+        GetuserAuthFromServer(RoleId);
+    }
+
     public void ResetPermissions()
     {
         IsPreview = false;
@@ -154,77 +246,172 @@ public class LoginManager : SingletonManager<LoginManager>
     void GetAuthcallBack(HttpCallBackArgs args)
     {
         Log.Debug("向服务器请求该账号角色信息");
-        ResetPermissions();
-
-        //IsPreview = true;
-        //IsReplay = true;
-        //IsCameraEvent = true;
-        //IsDoorEvent = true;
-        //IsPeopleManager = true;
-        //IsUserManager = true;
-        //IsCameraSet = true;
-        //IsDoorSet = true;
-
-
-        //获取权限赋值
-
-        if (args != null && !args.HasError && !string.IsNullOrEmpty(args.Value))
+        if (args == null || args.HasError || string.IsNullOrEmpty(args.Value))
         {
-            Log.Debug("该角色权限信息:" + args.Value);
-            //{"roleList":[{"roleId":10,"roleName":"测试角色1","menuList":[{"menuId":12,"menuName":"monitor_config","areaList":null}]}]}
-            roleListData authList = JsonConvert.DeserializeObject<roleListData>(args.Value);
-            if (authList != null && authList.roleList != null && authList.roleList.Count > 0 &&
-                authList.roleList[0].menuList != null)
-            {
-                foreach (var item in authList.roleList[0].menuList)
-                {
-                    switch (item.menuName)
-                    {
-                        case "monitor_config":
-                            IsCameraSet = true;
-                            break;
-                        case "door_config":
-                            IsDoorSet = true;
-                            break;
-                        case "monitor_preview":
-                            IsPreview = true;
-                            if (item.areaList != null)
-                                PreviewAuthList = item.areaList;
-                            else
-                                PreviewAuthList = new List<GetAreaGroupDevs>();
-                            break;
-                        case "monitor_playback":
-                            IsReplay = true;
-                            ReplayAuthList = item.areaList ?? new List<GetAreaGroupDevs>();
-                            break;
-                        case "monitor_event":
-                            IsCameraEvent = true;
-                            break;
-                        case "door_event":
-                            IsDoorEvent = true;
-                            break;
-                        case "user_management":
-                            IsUserManager = true;
-                            break;
-                        case "personnel_management":
-                            IsPeopleManager = true;
-                            break;
-                        default:
-                            break;
-                    }
-
-                }
-
-            }
-
+            HandlePermissionLoadFailure("获取角色权限失败，请检查服务器连接");
+            return;
         }
 
+        List<MenuInfo> menus;
+        try
+        {
+            menus = ExtractRoleMenus(args.Value, RoleId);
+        }
+        catch (Exception exception)
+        {
+            Log.Error("角色权限解析失败: " + exception.Message);
+            HandlePermissionLoadFailure("角色权限数据格式错误");
+            return;
+        }
+
+        if (menus == null)
+        {
+            HandlePermissionLoadFailure("服务器未返回当前角色的权限数据");
+            return;
+        }
+
+        ResetPermissions();
+        for (int i = 0; i < menus.Count; i++)
+        {
+            ApplyMenuPermission(menus[i]);
+        }
+
+        bool isAdministrator = IsAdministratorAccount();
+        if (isAdministrator)
+        {
+            IsPreview = true;
+            IsReplay = true;
+            IsCameraEvent = true;
+            IsDoorEvent = true;
+            IsPeopleManager = true;
+            IsUserManager = true;
+            IsCameraSet = true;
+            IsDoorSet = true;
+            PopulateLocalCameraPermissionsIfNeeded();
+        }
+
+        if (completeLoginAfterPermissionLoad)
+        {
+            completeLoginAfterPermissionLoad = false;
+            inTips.text = string.Empty;
+            UIManager.Instance.CloseWnd(ConStr.LOGINPAGE);
+            UIManager.Instance.PopUpWnd(ConStr.FIRSTPAGE, true);
+            if (menus.Count == 0 && !isAdministrator)
+            {
+                GameStart.Instance.ShowTip("当前角色尚未配置任何权限");
+            }
+        }
+    }
+
+    private void HandlePermissionLoadFailure(string message)
+    {
+        if (completeLoginAfterPermissionLoad)
+        {
+            completeLoginAfterPermissionLoad = false;
+            inTips.text = message;
+            inTips.color = Color.red;
+            return;
+        }
+        GameStart.Instance.ShowTip(message);
+    }
+
+    private static List<MenuInfo> ExtractRoleMenus(string json, int currentRoleId)
+    {
+        JObject root = JToken.Parse(json) as JObject;
+        if (root == null)
+        {
+            return null;
+        }
+
+        JToken roleListToken = root["roleList"] ?? root.SelectToken("data.roleList");
+        List<JToken> candidates = new List<JToken>();
+        if (roleListToken is JArray)
+        {
+            foreach (JToken candidate in roleListToken.Children())
+            {
+                candidates.Add(candidate);
+            }
+        }
         else
         {
-            GameStart.Instance.ShowTip("获取角色权限失败!");
+            JObject dataObject = root["data"] as JObject;
+            if (dataObject != null && dataObject["menuList"] != null)
+            {
+                candidates.Add(dataObject);
+            }
+            else if (root["menuList"] != null)
+            {
+                candidates.Add(root);
+            }
         }
 
+        if (candidates.Count == 0)
+        {
+            return null;
+        }
 
+        JToken selected = null;
+        string expectedRoleId = currentRoleId.ToString();
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            JToken id = candidates[i]["roleId"] ?? candidates[i]["id"];
+            if (id != null && string.Equals(id.ToString(), expectedRoleId, StringComparison.OrdinalIgnoreCase))
+            {
+                selected = candidates[i];
+                break;
+            }
+        }
+        if (selected == null)
+        {
+            selected = candidates[0];
+        }
+
+        JToken menuList = selected["menuList"] ?? selected["menus"];
+        if (menuList == null || menuList.Type == JTokenType.Null)
+        {
+            return new List<MenuInfo>();
+        }
+        return menuList.ToObject<List<MenuInfo>>() ?? new List<MenuInfo>();
+    }
+
+    private void ApplyMenuPermission(MenuInfo item)
+    {
+        if (item == null)
+        {
+            return;
+        }
+
+        string menuName = (item.menuName ?? string.Empty).Trim().ToLowerInvariant()
+            .Replace("_", string.Empty).Replace("-", string.Empty).Replace(" ", string.Empty);
+        if (item.menuId == 12 || menuName == "monitorconfig") IsCameraSet = true;
+        else if (item.menuId == 13 || menuName == "doorconfig") IsDoorSet = true;
+        else if (item.menuId == 14 || menuName == "monitorpreview")
+        {
+            IsPreview = true;
+            PreviewAuthList = item.areaList ?? new List<GetAreaGroupDevs>();
+        }
+        else if (item.menuId == 15 || menuName == "monitorplayback")
+        {
+            IsReplay = true;
+            ReplayAuthList = item.areaList ?? new List<GetAreaGroupDevs>();
+        }
+        else if (item.menuId == 16 || menuName == "monitorevent") IsCameraEvent = true;
+        else if (item.menuId == 17 || menuName == "doorevent") IsDoorEvent = true;
+        else if (item.menuId == 18 || menuName == "personnelmanagement") IsPeopleManager = true;
+        else if (item.menuId == 19 || menuName == "usermanagement") IsUserManager = true;
+    }
+
+    private static bool IsAdministratorAccount()
+    {
+        return IsAdministratorIdentity(RoleName) || IsAdministratorIdentity(UserName);
+    }
+
+    private static bool IsAdministratorIdentity(string identity)
+    {
+        string normalized = (identity ?? string.Empty).Trim().ToLowerInvariant()
+            .Replace("_", string.Empty).Replace("-", string.Empty).Replace(" ", string.Empty);
+        return normalized == "admin" || normalized == "administrator" || normalized == "superadmin" ||
+               normalized == "管理员" || normalized == "超级管理员";
     }
     public class LoginData
     {

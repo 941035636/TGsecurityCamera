@@ -16,7 +16,6 @@ using HslCommunication.LogNet;
 using Vuplex.WebView.Demos;
 using Vuplex.WebView;
 using System.Runtime.InteropServices;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -372,7 +371,7 @@ public class ReplayUIController : SingletonManager<ReplayUIController>
                 Log.Debug("播放链接:" + playback.rstpAddr);
                 string path = playback.rstpAddr;
                 OldUrl = path;
-                if (path == "null")
+                if (string.IsNullOrEmpty(path) || string.Equals(path, "null", StringComparison.OrdinalIgnoreCase))
                 {
                     GameStart.Instance.ShowTip("此监控不存在该时间段内的录像文件！");
                 }
@@ -384,36 +383,11 @@ public class ReplayUIController : SingletonManager<ReplayUIController>
                     //    _videoArea.transform.GetChild(0).GetChild(0).GetComponent<VideoPlayBack>().PlayVideoByUmp(path);
 
 
-                    //内置播放器插件播放
-                    //先读模板
-                   
-                    string htmlurl = Application.streamingAssetsPath + "/videomodel.html";
-                    System.IO.Stream myStream = new FileStream(htmlurl, FileMode.Open);
-                    Encoding encode = System.Text.Encoding.GetEncoding("UTF-8");
-                    StreamReader myStreamReader = new StreamReader(myStream, encode);
-                    string str = myStreamReader.ReadToEnd();
-                    Log.Debug(str);
-                    string stroutput = str.Replace("aaa", path);
-                    myStream.Close();
-                    //在操作video.html
-                    string htmlvideourl = Application.streamingAssetsPath + "/testvideo.html";
-                    System.IO.Stream myStreamvideo = new FileStream(htmlvideourl, FileMode.Open);
-
-
-                    myStreamvideo.Seek(0, SeekOrigin.Begin);
-                    myStreamvideo.SetLength(0);
-                    StreamWriter sw = new StreamWriter(myStreamvideo, encode);
-                    sw.Write(stroutput);
-                    sw.Flush();
-                    sw.Close();
-                    myStreamvideo.Close();
-                    //打开内置web 播放
-                    WWW a = new WWW(Application.streamingAssetsPath + "/testvideo.html");
                     if (mainWebViewPrefab != null)
                         mainWebViewPrefab.Destroy();
                     if (_hardwareKeyboardListener != null)
                         GameObject.Destroy(_hardwareKeyboardListener.gameObject);
-                    OpenWebGl(_videoArea.transform.GetChild(0), a.url); 
+                    OpenWebGl(_videoArea.transform.GetChild(0), BuildPlaybackHtml(path), true);
                 }
 
 
@@ -446,7 +420,24 @@ public class ReplayUIController : SingletonManager<ReplayUIController>
     CanvasWebViewPrefab _focusedPrefab;
     HardwareKeyboardListener _hardwareKeyboardListener;
     CanvasWebViewPrefab mainWebViewPrefab;
-    async void OpenWebGl(Transform parent, string URL)
+    private static string BuildPlaybackHtml(string url)
+    {
+        string safeUrl = (url ?? string.Empty)
+            .Replace("\\", "\\\\")
+            .Replace("'", "\\'")
+            .Replace("</", "<\\/");
+        return "<!doctype html><html><head><meta charset='utf-8'>" +
+               "<meta name='viewport' content='width=device-width,height=device-height,initial-scale=1'>" +
+               "<link href='https://cdnjs.cloudflare.com/ajax/libs/video.js/7.3.0/video-js.min.css' rel='stylesheet'>" +
+               "<script src='https://cdnjs.cloudflare.com/ajax/libs/video.js/7.3.0/video.min.js'></script>" +
+               "<style>html,body,#replay{width:100%;height:100%;margin:0;background:#000}.video-js{width:100%;height:100%}</style>" +
+               "</head><body><video id='replay' class='video-js vjs-default-skin vjs-big-play-centered' controls muted autoplay></video>" +
+               "<script>videojs('replay',{autoplay:true,muted:true,preload:'auto',fluid:false," +
+               "playbackRates:[0.5,1,1.5,2,4],sources:[{src:'" + safeUrl + "',type:'application/x-mpegURL'}]});</script>" +
+               "</body></html>";
+    }
+
+    async void OpenWebGl(Transform parent, string content, bool loadHtml = false)
     {
          mainWebViewPrefab = CanvasWebViewPrefab.Instantiate();
         mainWebViewPrefab.Resolution = 0.8f;
@@ -476,17 +467,16 @@ public class ReplayUIController : SingletonManager<ReplayUIController>
         await mainWebViewPrefab.WaitUntilInitialized();
 
         // The CanvasWebViewPrefab has initialized, so now we can use its WebViewPrefab.WebView property.
+        if (loadHtml)
+            mainWebViewPrefab.WebView.LoadHtml(content);
+        else
+            mainWebViewPrefab.WebView.LoadUrl(content);
+
         var webViewWithPopups = mainWebViewPrefab.WebView as IWithPopups;
         if (webViewWithPopups == null)
         {
-            mainWebViewPrefab.WebView.LoadHtml(NOT_SUPPORTED_HTML);
             return;
         }
-
-        Log.Debug("Loading Pinterest as an example because it uses popups for third party login. Click 'Login', then select Facebook or Google to open a popup for authentication.");
-
-        await Task.Delay(2500);
-        mainWebViewPrefab.WebView.LoadUrl(URL);
        
         webViewWithPopups.SetPopupMode(PopupMode.LoadInNewWebView);
         webViewWithPopups.PopupRequested += async (webView, eventArgs) =>

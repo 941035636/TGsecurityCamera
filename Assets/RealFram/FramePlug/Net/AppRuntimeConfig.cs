@@ -6,19 +6,20 @@ using UnityEngine;
 public class AppRuntimeSettings
 {
     public string apiScheme = "http";
-    public string apiHost = "127.0.0.1:7711";
-    public string mqttHost = "127.0.0.1";
+    public string apiHost = "192.168.110.2:7711";
+    public string mqttHost = "192.168.110.2";
     public int mqttPort = 1883;
     public string mqttUserName = "";
     public string mqttPassword = "";
     public int mqttReconnectMinSeconds = 2;
     public int mqttReconnectMaxSeconds = 30;
-    public string faceServiceUrl = "http://127.0.0.1:9001/FaceService/RtspWithFramApi";
+    public string faceServiceUrl = "http://192.168.110.3:9001/FaceService/RtspWithFramApi";
     public bool sendAuthorizationHeader = false;
     public string authorizationHeader = "Authorization";
     public string authorizationScheme = "Bearer";
     public bool enableLegacyMqttReceiver = false;
     public bool enableDebugLogs = false;
+    public bool enableOfflineMode = false;
     public int videoPreloadCount = 64;
     public int videoPreloadPerFrame = 4;
 }
@@ -54,7 +55,7 @@ public static class AppRuntimeConfig
         string path = Path.Combine(Application.streamingAssetsPath, ConfigDirectory, ConfigFileName);
         if (!File.Exists(path))
         {
-            Debug.LogWarning("运行配置不存在，使用内置默认值: " + path);
+            Debug.LogWarning("运行配置不存在，使用内置部署地址 " + ApiBaseUrl + ": " + path);
             return;
         }
 
