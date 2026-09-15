@@ -15,6 +15,10 @@ using static PeopleController;
 
 public class HKPerson : MonoSingleton<HKPerson>
 {
+    public HikvisionIssueStepResult LastUserIssueResult { get; private set; }
+    public HikvisionIssueStepResult LastCardIssueResult { get; private set; }
+    public HikvisionIssueStepResult LastFaceIssueResult { get; private set; }
+
     private static HKPerson _Instance;
     public static HKPerson GetInstance()
     {
@@ -312,6 +316,12 @@ public class HKPerson : MonoSingleton<HKPerson>
         // Log.Debug(CHCNetSDK.NET_DVR_GetLastError());//0表示没有错误
 
     }
+
+    public HikvisionIssueStepResult AddUserWithResult(string id, string name, string userType, string beginTime, string endTime, int connecthandle)
+    {
+        adduser(id, name, userType, beginTime, endTime, connecthandle);
+        return LastUserIssueResult ?? HikvisionIssueStepResult.Fail("人员信息下发没有返回结果");
+    }
     #endregion
 
 
@@ -319,6 +329,8 @@ public class HKPerson : MonoSingleton<HKPerson>
     #region 下发卡号
     public void CardAdd(string id, string card, int connectid)//string id,string card
     {
+
+        LastCardIssueResult = HikvisionIssueStepResult.Fail("卡号下发尚未执行");
 
         string carURL = "PUT /ISAPI/AccessControl/CardInfo/SetUp?format=json"; //卡号json报文
         //新增
@@ -329,7 +341,9 @@ public class HKPerson : MonoSingleton<HKPerson>
         //判断长连接返回值
         if (connectid < 0)
         {
-             Log.Debug("NET_DVR_StartRemoteConfig fail [url:PUT /ISAPI/AccessControl/UserInfo/SetUp?format=json] error:" + CHCNetSDK.NET_DVR_GetLastError());
+            int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+            LastCardIssueResult = HikvisionIssueStepResult.Fail("卡号长连接无效", errorCode);
+             Log.Debug("NET_DVR_StartRemoteConfig fail [url:PUT /ISAPI/AccessControl/UserInfo/SetUp?format=json] error:" + errorCode);
             Marshal.FreeHGlobal(pcarURL);//释放以前从进程的非托管内存中分配的内存。
             return;
         }
@@ -340,11 +354,24 @@ public class HKPerson : MonoSingleton<HKPerson>
             SendCardData(id, card, connectid);//id,card
         }
     }
+
+    public HikvisionIssueStepResult AddCardWithResult(string id, string card, int connectid)
+    {
+        CardAdd(id, card, connectid);
+        return LastCardIssueResult ?? HikvisionIssueStepResult.Fail("卡号下发没有返回结果");
+    }
     #endregion
 
 
     public void AddInfo(string id, string name, string userType, string beginTime, string endTime, int connecthandle)//,string doorTight,int doorNo,string planTemplateNo
     {
+
+        LastUserIssueResult = HikvisionIssueStepResult.Fail("人员信息下发尚未执行");
+        if (connecthandle < 0)
+        {
+            LastUserIssueResult = HikvisionIssueStepResult.Fail("人员信息长连接无效");
+            return;
+        }
 
         CUserInfoCfg JsonUserInfo = new CUserInfoCfg();//定义一个 名为JsonUserInfo 的CUserInfoCfg类
         JsonUserInfo.UserInfo = new CUserInfo();//初始化
@@ -397,7 +424,9 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_FAILED)
             {
-                 Log.Debug("Set User Fail error:" + CHCNetSDK.NET_DVR_GetLastError());
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastUserIssueResult = HikvisionIssueStepResult.Fail("人员信息下发失败", errorCode);
+                 Log.Debug("Set User Fail error:" + errorCode);
                 break;
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_SUCCESS)
@@ -405,9 +434,9 @@ public class HKPerson : MonoSingleton<HKPerson>
                 //返回NET_SDK_CONFIG_STATUS_SUCCESS代表流程走通了，但并不代表下发成功，比如有些设备可能因为人员已存在等原因下发失败，所以需要解析Json报文
                 CResponseStatus JsonResponseStatus = new CResponseStatus();
                 JsonResponseStatus = JsonConvert.DeserializeObject<CResponseStatus>(strJsonData);
-                JsonResponseStatus.errorMsg = "OK";
                 if (JsonResponseStatus.statusCode == 1)
                 {
+                    LastUserIssueResult = HikvisionIssueStepResult.Ok(string.IsNullOrEmpty(JsonResponseStatus.errorMsg) ? "OK" : JsonResponseStatus.errorMsg);
                     // Log.Debug("Set User Success");
 
                     //foreach (var item in PeopleJsonParsing.Instance.IPBandConnectHandleUserDic)
@@ -426,6 +455,10 @@ public class HKPerson : MonoSingleton<HKPerson>
                 }
                 else
                 {
+                    LastUserIssueResult = HikvisionIssueStepResult.Fail(
+                        string.IsNullOrEmpty(JsonResponseStatus.errorMsg) ? JsonResponseStatus.statusString : JsonResponseStatus.errorMsg,
+                        0,
+                        JsonResponseStatus.statusCode);
                      Log.Debug("Set User Fail, ResponseStatus.statusCode" + JsonResponseStatus.statusCode+" 错误详细信息:"+JsonResponseStatus.errorMsg+" 状态描述:"+JsonResponseStatus.statusString);
                 }
                 break;
@@ -438,6 +471,8 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_EXCEPTION)
             {
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastUserIssueResult = HikvisionIssueStepResult.Fail("人员信息下发连接异常", errorCode);
                 Log.Debug(dwState);
                  Log.Debug("Set User Exception error:" + CHCNetSDK.NET_DVR_GetLastError());
                 Log.Debug("重新建立人员基础信息长连接");
@@ -457,6 +492,8 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else
             {
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastUserIssueResult = HikvisionIssueStepResult.Fail("人员信息下发返回未知状态", errorCode);
                  Log.Debug("unknown Status error:" + CHCNetSDK.NET_DVR_GetLastError());
                 //  Log.Debug(J);
                 break;
@@ -484,6 +521,7 @@ public class HKPerson : MonoSingleton<HKPerson>
 
     private void SendCardData(string id, string card, int connecthandle)//string id,string card
     {
+        LastCardIssueResult = HikvisionIssueStepResult.Fail("卡号下发尚未执行");
         CCardInfoCfg JsonCardInfo = new CCardInfoCfg();
         JsonCardInfo.CardInfo = new CCardInfo();
         JsonCardInfo.CardInfo.employeeNo = id;//编号
@@ -514,7 +552,9 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_FAILED)
             {
-                 Log.Debug("Set Card Fail error:" + CHCNetSDK.NET_DVR_GetLastError());
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastCardIssueResult = HikvisionIssueStepResult.Fail("卡号下发失败", errorCode);
+                 Log.Debug("Set Card Fail error:" + errorCode);
                 break;
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_SUCCESS)
@@ -524,6 +564,7 @@ public class HKPerson : MonoSingleton<HKPerson>
 
                 if (JsonResponseStatus.statusCode == 1)
                 {
+                    LastCardIssueResult = HikvisionIssueStepResult.Ok(string.IsNullOrEmpty(JsonResponseStatus.errorMsg) ? "OK" : JsonResponseStatus.errorMsg);
                     //foreach (var item in PeopleJsonParsing.Instance.IPBandConnectHandleCardDic)
                     //{
                     //    if (item.Value == connecthandle)
@@ -539,6 +580,10 @@ public class HKPerson : MonoSingleton<HKPerson>
                 }
                 else
                 {
+                    LastCardIssueResult = HikvisionIssueStepResult.Fail(
+                        string.IsNullOrEmpty(JsonResponseStatus.errorMsg) ? JsonResponseStatus.statusString : JsonResponseStatus.errorMsg,
+                        0,
+                        JsonResponseStatus.statusCode);
                      Log.Debug("Set Card Fail, ResponseStatus.statusCode:" + JsonResponseStatus.statusCode);
                     Log.Debug("Error:" + CHCNetSDK.NET_DVR_GetLastError());
                 }
@@ -546,6 +591,8 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_EXCEPTION)
             {
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastCardIssueResult = HikvisionIssueStepResult.Fail("卡号下发连接异常", errorCode);
                  Log.Debug("Set Card Exception error:" + CHCNetSDK.NET_DVR_GetLastError());
                 Log.Debug("重新建立人员卡号信息长连接");
                 CHCNetSDK.NET_DVR_StopRemoteConfig(connecthandle);
@@ -564,6 +611,8 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else
             {
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastCardIssueResult = HikvisionIssueStepResult.Fail("卡号下发返回未知状态", errorCode);
                  Log.Debug("unknown Status error:" + CHCNetSDK.NET_DVR_GetLastError());
                 break;
             }
@@ -610,6 +659,12 @@ public class HKPerson : MonoSingleton<HKPerson>
 
     public void FaceData(string id,int connectid)//string id,string url
     {
+        LastFaceIssueResult = HikvisionIssueStepResult.Fail("人脸下发尚未执行");
+        if (connectid < 0)
+        {
+            LastFaceIssueResult = HikvisionIssueStepResult.Fail("人脸长连接无效");
+            return;
+        }
         //string path = Application.streamingAssetsPath + "/Face7.jpg";
         // string path = Application.streamingAssetsPath + url;
         string path = @"C:\facepicture";
@@ -646,6 +701,7 @@ public class HKPerson : MonoSingleton<HKPerson>
         struJsonDataCfg.dwJsonDataSize = (uint)strJsonSearchFaceDataCond.Length;
         if (!File.Exists(filepath))
         {
+            LastFaceIssueResult = HikvisionIssueStepResult.Fail("人脸图片不存在");
              Log.Debug("The picture does not exist!");
             Marshal.FreeHGlobal(ptrJsonSearchFaceDataCond);
             return;
@@ -655,6 +711,7 @@ public class HKPerson : MonoSingleton<HKPerson>
          Log.Debug(fs.Name);
         if (0 == fs.Length)
         {
+            LastFaceIssueResult = HikvisionIssueStepResult.Fail("人脸图片为空");
              Log.Debug("The picture is 0k,please input another picture!");
             Marshal.FreeHGlobal(ptrJsonSearchFaceDataCond);
             fs.Close();
@@ -662,6 +719,7 @@ public class HKPerson : MonoSingleton<HKPerson>
         }
         if (200 * 1024 < fs.Length)
         {
+            LastFaceIssueResult = HikvisionIssueStepResult.Fail("人脸图片超过设备限制的200KB");
              Log.Debug("The picture is larger than 200k,please input another picture!");
             Marshal.FreeHGlobal(ptrJsonSearchFaceDataCond);
             fs.Close();
@@ -698,42 +756,26 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_FAILED)
             {
-                 Log.Debug("Set Face Error:" + CHCNetSDK.NET_DVR_GetLastError());
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastFaceIssueResult = HikvisionIssueStepResult.Fail("人脸下发失败", errorCode);
+                 Log.Debug("Set Face Error:" + errorCode);
                 break;
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_SUCCESS)
             {
                 CResponseStatus JsonResponseStatus = new CResponseStatus();
                 JsonResponseStatus = JsonConvert.DeserializeObject<CResponseStatus>(strResponseStatus);
-                JsonResponseStatus.errorMsg = "OK";
                 if (JsonResponseStatus.statusCode == 1)
                 {
-                    foreach (var item in PeopleJsonParsing.IPBandConnectHandleFaceDic)
-                    {
-                        if (item.Value == connectid)
-                        {
-                            if (TypeMenuController.UserTypebandsDevs[TypeMenuController.Ins.ChooseType].Exists(t=>t.Ip==item.Key))
-                            {
-                                NVRInformation nVR = TypeMenuController.UserTypebandsDevs[TypeMenuController.Ins.ChooseType].Find(t => t.Ip == item.Key);
-
-                                Log.Debug(id + "    人脸信息下发到IP为：" + item.Key +"设备id为:"+nVR.id+ "的设备成功");
-                                //if (PeopleJsonParsing.instance.FaceSuccessDic.ContainsKey(item.Key))
-                                //{
-                                //    PeopleJsonParsing.instance.FaceSuccessDic[item.Key].Add(id);
-                                //}
-                                //人脸信息是最后一步，只要人脸信息下发成功了就可以视为成功，像服务器推送下发成功的人员id和设备id
-                                Log.Debug("像服务器推送下发成功的人员id:"+id+"设备id:"+nVR.id);
-                            }
-                            Log.Debug(id + "    人脸信息下发到IP为：" + item.Key + "的设备成功");
-
-                        }
-
-                    }
-
-                   
+                    LastFaceIssueResult = HikvisionIssueStepResult.Ok(string.IsNullOrEmpty(JsonResponseStatus.errorMsg) ? "OK" : JsonResponseStatus.errorMsg);
+                    Log.Debug(id + " 人脸信息下发成功");
                 }
                 else
                 {
+                    LastFaceIssueResult = HikvisionIssueStepResult.Fail(
+                        string.IsNullOrEmpty(JsonResponseStatus.errorMsg) ? JsonResponseStatus.statusString : JsonResponseStatus.errorMsg,
+                        0,
+                        JsonResponseStatus.statusCode);
                      Log.Debug("Set Face Fail, ResponseStatus.statusCode = " + JsonResponseStatus.statusCode);
                     Log.Debug(CHCNetSDK.NET_DVR_GetLastError());
                     // Log.Debug(ptrJsonDataCfg);
@@ -743,6 +785,8 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else if (dwState == (int)CHCNetSDK.NET_SDK_SENDWITHRECV_STATUS.NET_SDK_CONFIG_STATUS_EXCEPTION)
             {
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastFaceIssueResult = HikvisionIssueStepResult.Fail("人脸下发连接异常", errorCode);
                  Log.Debug("Set Face Exception Error:" + CHCNetSDK.NET_DVR_GetLastError());
                 Log.Debug("重新建立人员人脸信息长连接");
                 CHCNetSDK.NET_DVR_StopRemoteConfig(connectid);
@@ -760,6 +804,8 @@ public class HKPerson : MonoSingleton<HKPerson>
             }
             else
             {
+                int errorCode = (int)CHCNetSDK.NET_DVR_GetLastError();
+                LastFaceIssueResult = HikvisionIssueStepResult.Fail("人脸下发返回未知状态", errorCode);
                  Log.Debug("unknown Status Error:" + CHCNetSDK.NET_DVR_GetLastError());
                 break;
             }
@@ -772,8 +818,16 @@ public class HKPerson : MonoSingleton<HKPerson>
         //}
 
 
+        Marshal.FreeHGlobal(struJsonDataCfg.lpPicData);
+        Marshal.FreeHGlobal(ptrJsonSearchFaceDataCond);
         Marshal.FreeHGlobal(ptrJsonDataCfg);
         Marshal.FreeHGlobal(ptrJsonResponseStatus);
+    }
+
+    public HikvisionIssueStepResult AddFaceWithResult(string id, int connectid)
+    {
+        FaceData(id, connectid);
+        return LastFaceIssueResult ?? HikvisionIssueStepResult.Fail("人脸下发没有返回结果");
     }
     #endregion
 

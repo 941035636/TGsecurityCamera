@@ -128,22 +128,15 @@ public class PeopleController : SingletonManager<PeopleController>
         DoorEquipManager = AreaScroll.transform.Find("Viewport/Content/DoorEquipManager");
         backbtn = ShaiXuanPanel.Find("backbtn").GetComponent<Button>();
         ShowDateZCalendarBtn.onClick.AddListener(ShowDateZCalendar);
-  
+
+        PrepareCustomIssueEntry();
 
         //分组下发人员信息到具体门禁设备的调用
         SendUserToDoorBtn.onClick.AddListener(() =>
         {
             if (LoginManager.Ins.IsPeopleManager)
             {
-
-                PeopleJsonParsing.Instance.LoginDevices(TypeMenuController.Ins.ChooseType);
-                PeopleJsonParsing.Instance.startpage = 1;
-
-
-                //下发界面显示
-                SendPanel.gameObject.SetActive(true);
-
-
+                PersonIssuePanelController.Ensure(this).Show();
             }
             else
             {
@@ -298,6 +291,66 @@ public class PeopleController : SingletonManager<PeopleController>
 
             ShaiXuanPanel.gameObject.SetActive(false);
         });
+    }
+
+    /// <summary>
+    /// 原分组下发按钮在预制体中默认隐藏且只有图标。运行时将其显示为明确的文字入口。
+    /// </summary>
+    private void PrepareCustomIssueEntry()
+    {
+        if (SendUserToDoorBtn == null) return;
+
+        GameObject entry = SendUserToDoorBtn.gameObject;
+        entry.name = "CustomPersonIssueButton";
+        entry.SetActive(true);
+
+        // 原按钮图片本身包含旧文字和图标，清空 Sprite，避免与新标签重叠。
+        Image background = entry.GetComponent<Image>();
+        if (background != null)
+        {
+            background.sprite = null;
+            background.type = Image.Type.Simple;
+            background.color = new Color(0.08f, 0.34f, 0.52f, 1f);
+        }
+        SendUserToDoorBtn.transition = Selectable.Transition.ColorTint;
+        ColorBlock colors = SendUserToDoorBtn.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(0.82f, 0.94f, 1f, 1f);
+        colors.pressedColor = new Color(0.68f, 0.84f, 0.92f, 1f);
+        colors.disabledColor = new Color(0.45f, 0.45f, 0.45f, 0.5f);
+        SendUserToDoorBtn.colors = colors;
+
+        RectTransform rect = entry.GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(650f, -30f);
+            rect.sizeDelta = new Vector2(150f, 36f);
+        }
+
+        Text label = entry.GetComponentInChildren<Text>(true);
+        if (label == null)
+        {
+            GameObject labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            labelObject.transform.SetParent(entry.transform, false);
+            label = labelObject.GetComponent<Text>();
+        }
+
+        label.font = NumPage != null && NumPage.font != null
+            ? NumPage.font
+            : Resources.GetBuiltinResource<Font>("Arial.ttf");
+        label.fontSize = 15;
+        label.alignment = TextAnchor.MiddleCenter;
+        label.color = Color.white;
+        label.text = "自定义下发";
+        label.raycastTarget = false;
+        RectTransform labelRect = label.rectTransform;
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
     }
     //修改人员类型后返回的需要下发哪些设备，删除哪些设备数据结构
     [Serializable]

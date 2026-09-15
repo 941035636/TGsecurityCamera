@@ -19,7 +19,8 @@ public class AppRuntimeSettings
     public string authorizationScheme = "Bearer";
     public bool enableLegacyMqttReceiver = false;
     public bool enableDebugLogs = false;
-    public bool enableOfflineMode = false;
+    // 临时关闭登录验证，便于查看和测试界面；恢复部署测试时改回 false。
+    public bool enableOfflineMode = true;
     public int videoPreloadCount = 64;
     public int videoPreloadPerFrame = 4;
 }
